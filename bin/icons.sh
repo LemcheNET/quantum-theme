@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Fetch and install this variant's Slot icon theme (l4k1, GPLv3).
 #
-# Not bundled: measured at 13,435 files and 182 MiB on quantum (light, 2026-10-04), two
+# Not bundled, and the sets differ by variant: measured on quantum 2026-10-04,
+# Slot-Light-Icons is 13,435 files / 182 MiB and Slot-Dark-Icons 19,436 / 215 MiB - two
 # orders of magnitude bigger than everything else here put together. It is a dependency,
 # fetched on demand. Use --check for the figures on your host; upstream changes them.
 #

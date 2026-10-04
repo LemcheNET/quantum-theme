@@ -2,7 +2,7 @@
 type: runbook
 subject: Workstation desktop
 artifact: Quantum global themes for KDE Plasma 6
-status: partly verified — verify.sh --variant light passed on quantum 2026-10-04 (every check ok, one finding: widgetStyle was Fusion, not the declared Breeze); offline gates in tests/ pass; the dark variant and every state-changing script are still untested since the merge
+status: verified — install.sh --apply and verify.sh both run clean for both variants on quantum (Plasma 6.6.6, Kubuntu 26.04) 2026-10-04; offline gates in tests/ pass. Still unexercised: retint.sh, opacity.sh, buttons.sh, whichbg.sh, uninstall.sh, gtk.sh --rebuild, icons.sh
 owner: Valdemar Lemche
 concepts: [KDE Plasma, Aurorae, look-and-feel package, Plasma style, window decoration, breeze-gtk]
 tags: [desktop, plasma, theming, kde]
@@ -28,10 +28,11 @@ The two variants are one codebase. Everything that differs between them lives in
 `variants/<slug>/variant.env`; everything else is shared. See
 [How the variants stay in step](#how-the-variants-stay-in-step) for why that matters.
 
-**Partly verified.** `bin/verify.sh --variant light` passes on `quantum` against a live
-install. The dark variant and every state-changing script — `install.sh`, `gtk.sh`,
-`icons.sh`, `retint.sh`, `opacity.sh`, `buttons.sh`, `whichbg.sh`, `uninstall.sh` — are
-**untested** in their consolidated form. Start with the read-only `bin/verify.sh`.
+**Verified for the install path.** `bin/install.sh --variant <slug> --apply` followed by
+`bin/verify.sh --variant <slug>` runs clean for both variants on `quantum`, Plasma 6.6.6
+on Kubuntu 26.04. Still unexercised in consolidated form: `retint.sh`, `opacity.sh`,
+`buttons.sh`, `whichbg.sh`, `uninstall.sh`, `icons.sh`, and `gtk.sh --rebuild`. Start
+with the read-only `bin/verify.sh`.
 
 ## The two variants
 
@@ -116,11 +117,18 @@ look-and-feel's `contents/defaults` and accept the toolbar step.
 [KDE Store 2234789](https://store.kde.org/p/2234789/), source
 [github.com/L4ki/Slot-Plasma-Themes](https://github.com/L4ki/Slot-Plasma-Themes).
 
-**Not bundled.** `Slot-Light-Icons` measured **13,435 files and 182 MiB** installed on
-`quantum` (2026-10-04), against about 700 KiB for everything else in a variant. That is
-two orders of magnitude, so it is a dependency, fetched on demand. Run
-`bin/icons.sh --variant <slug> --check` for the figures on your own host rather than
-trusting these — upstream changes them.
+**Not bundled**, and the two sets are not the same size. Measured installed on `quantum`,
+2026-10-04:
+
+| | files | on disk | `Inherits=` |
+|---|---|---|---|
+| `Slot-Light-Icons` | 13,435 | 182 MiB | `breeze,Adwaita,hicolor` |
+| `Slot-Dark-Icons` | 19,436 | 215 MiB | `breeze-dark,Adwaita,hicolor` |
+
+Against about 700 KiB for everything else in a variant — two orders of magnitude, so it
+is a dependency, fetched on demand. Run `bin/icons.sh --variant <slug> --check` for your
+own host rather than trusting the table; upstream changes it, and these numbers are one
+measurement on one machine.
 
 ```bash
 bin/icons.sh --variant dark              # sparse clone, install to ~/.local/share/icons
@@ -131,14 +139,14 @@ bin/icons.sh --variant dark --from <dir> # install from a clone you already have
 
 The sparse clone pulls only the one icon theme, not the 559 MiB repo.
 
-`--dedupe` is worth knowing about: a large fraction of the theme is byte-identical
+`--dedupe` is worth knowing about: a large fraction of each theme is byte-identical
 duplicates, and hardlinking them reclaims real space. **The ratio is not verified for the
-currently installed version** — an earlier note here claimed 62% against a 130 MiB
-baseline, and the install on `quantum` measures 182 MiB, so that figure was either from a
-different upstream revision or from the other variant. `icons.sh --dedupe` prints the
-actual before and after, which is the number to trust. The catch is that editing one icon
-afterwards edits every identical copy, so it is opt-in. Re-run without `--dedupe` to get
-a clean tree back.
+installed versions.** An earlier note here claimed 62% against a 130 MiB baseline and
+19,873 files — which is within a few hundred of the *dark* theme's file count while being
+quoted in both variants' docs, so it had been carried across the fork like the
+descriptions were. `icons.sh --dedupe` prints the actual before and after, which is the
+number to trust. The catch is that editing one icon afterwards edits every identical
+copy, so it is opt-in. Re-run without `--dedupe` to get a clean tree back.
 
 Two things about these themes that matter here:
 

@@ -30,7 +30,9 @@ say "$NAME $QUANTUM_VERSION (variant: $SLUG)"
 
 # ---- pre-checks --------------------------------------------------------
 command -v plasmashell >/dev/null || die "plasmashell not found; is this a Plasma session?"
-PLASMA_VER="$(plasmashell --version | awk '{print $NF}')"
+# plasmashell --version writes QThreadStorage warnings to stderr on exit, which
+# read as errors at the top of an install. They are not ours.
+PLASMA_VER="$(plasmashell --version 2>/dev/null | awk '{print $NF}')"
 say "Plasma $PLASMA_VER"
 case "$PLASMA_VER" in
   6.*) ;;
@@ -52,7 +54,8 @@ else
   warn "without it the pointer falls back to the X11 default black arrow"
 fi
 
-# The icon theme is a dependency, not part of this package: ~13k files, ~180 MiB.
+# The icon theme is a dependency, not part of this package: 13k-19k files and
+# 180-215 MiB depending on the variant.
 ICON_FOUND=""
 for d in "$DATA/icons/$ICON_THEME" "/usr/share/icons/$ICON_THEME"; do
   [[ -f "$d/index.theme" ]] && { ICON_FOUND="$d"; break; }
@@ -78,23 +81,20 @@ kwriteconfig6 --help >/dev/null 2>&1 || warn "kwriteconfig6 not found - --apply 
 
 # ---- install (idempotent) ---------------------------------------------
 install_pkg() {
-  local src="$1" dest="$2"
+  local what="$1" src="$2" dest="$3"
   [[ -d "$src" ]] || die "missing source package: $src"
-  say "installing $(basename "$dest")"
+  # All three packages are named after the id, so naming the KIND is the only way to
+  # tell these three lines apart.
+  say "installing the $what -> $dest"
   mkdir -p "$(dirname "$dest")"
   rm -rf "$dest"
   cp -a "$src" "$dest"
 }
-install_pkg "$AURORAE_SRC" "$AURORAE_DEST"
-install_pkg "$STYLE_SRC"   "$STYLE_DEST"
-install_pkg "$LNF_SRC"     "$LNF_DEST"
+install_pkg "Aurorae decoration" "$AURORAE_SRC" "$AURORAE_DEST"
+install_pkg "Plasma style"       "$STYLE_SRC"   "$STYLE_DEST"
+install_pkg "global theme"       "$LNF_SRC"     "$LNF_DEST"
 
 if command -v kbuildsycoca6 >/dev/null; then kbuildsycoca6 --noincremental >/dev/null 2>&1 || true; fi
-
-say "installed to:"
-say "  $AURORAE_DEST"
-say "  $STYLE_DEST"
-say "  $LNF_DEST"
 
 if [[ $APPLY -eq 0 ]]; then
   cat <<MSG

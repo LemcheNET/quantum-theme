@@ -44,6 +44,28 @@ else
   note "plasma-apply-desktoptheme not found"
 fi
 
+# Which variant is live decides how to read everything below: the colour cross-check
+# examines the ACTIVE scheme, so when a sibling variant is applied its verdict is
+# evidence about that sibling, not about this variant.
+live_lnf="$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null)"
+if [[ "$live_lnf" == "$ID" ]]; then
+  ok "$ID is the active global theme"
+else
+  sibling=""
+  while read -r s; do
+    [[ "$s" == "$SLUG" ]] && continue
+    [[ "$(quantum_variant_get "$s" ID)" == "$live_lnf" ]] && sibling="$s"
+  done < <(quantum_variants)
+  if [[ -n "$sibling" ]]; then
+    note "$live_lnf is active, not $ID - the figures below are this variant's on disk,"
+    note "not what is live. Run: bin/install.sh --variant $SLUG --apply"
+  elif [[ -z "$live_lnf" ]]; then
+    note "no global theme recorded"
+  else
+    note "a different global theme is active: $live_lnf"
+  fi
+fi
+
 echo "one colour across decoration, colours and application style"
 want=""           # consumed again by the GTK section below; must survive set -u
 if [[ -f "$BASE_SCHEME_FILE" ]]; then
@@ -71,32 +93,22 @@ if [[ -f "$BASE_SCHEME_FILE" ]]; then
     awin=$(awk '/^\[Colors:Window\]/{f=1;next} /^\[/{f=0} f&&/^BackgroundNormal=/{sub(/^BackgroundNormal=/,"");print;exit}' "$active")
     wm=$(awk '/^\[WM\]/{f=1;next} /^\[/{f=0} f&&/^activeBackground=/{sub(/^activeBackground=/,"");print;exit}' "$active")
     printf '  %-30s %s\n' "active scheme (live)" "$live_scheme"
-    [[ "$hdr" == "$awin" ]] && ok "[Colors:Header] == [Colors:Window] ($hdr) - app toolbars match the titlebar" \
-                            || bad "[Colors:Header]=$hdr != [Colors:Window]=$awin - run bin/colorscheme.sh, then re-apply"
-    [[ "$wm" == "$awin" ]]  && ok "[WM] activeBackground == [Colors:Window]" \
-                            || note "[WM] activeBackground=$wm != $awin"
+    if [[ "$live_lnf" == "$ID" ]]; then
+      [[ "$hdr" == "$awin" ]] && ok "[Colors:Header] == [Colors:Window] ($hdr) - app toolbars match the titlebar" \
+                              || bad "[Colors:Header]=$hdr != [Colors:Window]=$awin - run bin/colorscheme.sh, then re-apply"
+      [[ "$wm" == "$awin" ]]  && ok "[WM] activeBackground == [Colors:Window]" \
+                              || note "[WM] activeBackground=$wm != $awin"
+    else
+      # Checking $live_scheme would report a verdict on whichever variant IS applied,
+      # which reads as validating this one. Say whose scheme it is instead.
+      note "the live scheme is $live_scheme, not $ID - skipping the Header check, it would"
+      note "be a verdict on that variant rather than this one"
+      [[ "$hdr" == "$awin" ]] && note "  (for the record, $live_scheme does have Header == Window)" \
+                              || note "  (for the record, $live_scheme has Header=$hdr != Window=$awin)"
+    fi
   fi
 else
   note "$BASE_SCHEME_FILE not found - cannot cross-check the colour"
-fi
-
-live_lnf="$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null)"
-if [[ "$live_lnf" == "$ID" ]]; then
-  ok "$ID is the active global theme"
-else
-  sibling=""
-  while read -r s; do
-    [[ "$s" == "$SLUG" ]] && continue
-    [[ "$(quantum_variant_get "$s" ID)" == "$live_lnf" ]] && sibling="$s"
-  done < <(quantum_variants)
-  if [[ -n "$sibling" ]]; then
-    note "$live_lnf is active, not $ID - the colour numbers above are this variant's, not"
-    note "the live one's. Run: bin/install.sh --variant $SLUG --apply"
-  elif [[ -z "$live_lnf" ]]; then
-    note "no global theme recorded"
-  else
-    note "a different global theme is active: $live_lnf"
-  fi
 fi
 
 echo "live settings"
