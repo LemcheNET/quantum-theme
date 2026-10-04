@@ -12,7 +12,7 @@
         "Id": "QuantumDark",
         "License": "LGPL-3.0-or-later",
         "Name": "Quantum Dark",
-        "Version": "2.1.0"
+        "Version": "2.1.1"
     },
     "X-Plasma-API": "5.0"
 }

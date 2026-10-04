@@ -20,7 +20,7 @@
         "ServiceTypes": [
             "aurorae"
         ],
-        "Version": "2.1.0",
+        "Version": "2.1.1",
         "Website": "https://gitlab.com/jomada/moe-theme",
         "X-KDE-PluginInfo-blur": false
     }

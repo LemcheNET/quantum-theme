@@ -50,10 +50,10 @@ parties. Upload is manual, per product, by hand.
 | **Category** | `Global Themes (Plasma 6)` |
 | **Title** | Quantum |
 | **Summary** | One uninterrupted colour from titlebar to window body, with a translucent panel. Light and dark. |
-| **Version** | 2.1.0 |
+| **Version** | 2.1.1 |
 | **Licence** | GPL-3.0-or-later |
 | **Tags** | `plasma-6` |
-| **Files** | `QuantumLight-lookandfeel-2.1.0.tar.gz` — label: Quantum Light<br>`QuantumDark-lookandfeel-2.1.0.tar.gz` — label: Quantum Dark |
+| **Files** | `QuantumLight-lookandfeel-2.1.1.tar.gz` — label: Quantum Light<br>`QuantumDark-lookandfeel-2.1.1.tar.gz` — label: Quantum Dark |
 
 ## Product 2 — Window Decorations
 
@@ -62,10 +62,10 @@ parties. Upload is manual, per product, by hand.
 | **Category** | `Plasma 6 Window Decorations` |
 | **Title** | Quantum |
 | **Summary** | jomada's Moe decoration, retinted so the titlebar is the same colour as the window body. |
-| **Version** | 2.1.0 |
+| **Version** | 2.1.1 |
 | **Licence** | GPL-3.0-or-later |
 | **Tags** | `plasma-6` |
-| **Files** | `QuantumLight-aurorae-2.1.0.tar.gz` — label: Quantum Light<br>`QuantumDark-aurorae-2.1.0.tar.gz` — label: Quantum Dark |
+| **Files** | `QuantumLight-aurorae-2.1.1.tar.gz` — label: Quantum Light<br>`QuantumDark-aurorae-2.1.1.tar.gz` — label: Quantum Dark |
 
 **This product redistributes someone else's GPLv3 artwork.** The description must credit
 jomada and link upstream, and the licence field must say GPLv3 — see *Attribution* below.
@@ -77,10 +77,10 @@ jomada and link upstream, and the licence field must say GPLv3 — see *Attribut
 | **Category** | `Plasma 6 Themes` |
 | **Title** | Quantum |
 | **Summary** | A thin translucent layer over Breeze: panel at 65%, popups and tooltips at 75%. |
-| **Version** | 2.1.0 |
+| **Version** | 2.1.1 |
 | **Licence** | LGPL-3.0-or-later |
 | **Tags** | `plasma-6` |
-| **Files** | `QuantumLight-plasmastyle-2.1.0.tar.gz` — label: Quantum Light<br>`QuantumDark-plasmastyle-2.1.0.tar.gz` — label: Quantum Dark |
+| **Files** | `QuantumLight-plasmastyle-2.1.1.tar.gz` — label: Quantum Light<br>`QuantumDark-plasmastyle-2.1.1.tar.gz` — label: Quantum Dark |
 
 ## The first line of every description
 
@@ -90,7 +90,7 @@ sentence on the page, because the store cannot deliver what it implies:
 > **Installing from this page alone will not give you the full theme.** *Get New Global
 > Themes* resolves no dependencies, so it installs only the look-and-feel package — not
 > the Aurorae decoration, not the Plasma style, and not the icon theme. For the complete
-> theme, download `quantum-theme-2.1.0.tar.gz` from
+> theme, download `quantum-theme-2.1.1.tar.gz` from
 > <https://github.com/LemcheNET/quantum-theme/releases> and run
 > `bin/install.sh --variant dark --apply` (or `--variant light`). The three store
 > products here are for discovery and for anyone who wants one piece on its own.
@@ -142,7 +142,7 @@ Include in the **Window Decorations** description, and in the Global Themes desc
 > `bin/icons.sh` fetches them from the author's repository.
 > <https://github.com/L4ki/Slot-Plasma-Themes> · <https://store.kde.org/p/2234789>
 
-## Changelog for 2.1.0
+## Changelog for 2.1.1
 
 > Consolidated the light and dark variants into one repository. Previously they were
 > forked packages whose descriptions, versions and metadata had drifted apart.
@@ -154,6 +154,8 @@ Include in the **Window Decorations** description, and in the Global Themes desc
 > - Titlebar button size is set across both variants at once, since Aurorae keys it
 >   per theme and the two otherwise diverge silently
 > - 255 automated checks run on every change
+> - A security policy documenting the two scripts that reach the network, and full
+>   REUSE licence compliance
 
 ## Per-release checklist
 
@@ -185,8 +187,8 @@ On each product page:
 
 1. **The name.** There are existing Quantum-named products on the store and the product
    URLs are permanent. Settle it before the pages exist, not after.
-2. **`VERSION` is 2.1.0**, which was inherited rather than chosen — the Aurorae packages
-   said 1.9 while their siblings said 1.0, and 2.1.0 was picked to sit above the "v2.0"
-   the handbook refers to. The git tag must match it and tags are permanent.
+2. **`VERSION` is 2.1.1.** 2.1.1 was tagged at a commit whose CI failed `reuse lint`,
+   so its release job never ran. 2.1.1 is the first release that builds; nothing in
+   the installed theme differs from 2.1.1.
 3. **Previews.** Still generated composites. Both variants run correctly now, so this is
    a screenshot away.
