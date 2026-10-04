@@ -21,10 +21,10 @@ if [[ -f "$BAK" ]]; then
     say "no previous global theme recorded - falling back to org.kde.breeze.desktop"
     plasma-apply-lookandfeel -a org.kde.breeze.desktop
   fi
-  kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library  "${OLD_DECO_LIBRARY:-org.kde.breeze}"
-  kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme    "${OLD_DECO_THEME:-Breeze}"
-  [[ -n "${OLD_BTN_LEFT:-}"  ]] && kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft  "$OLD_BTN_LEFT"
-  [[ -n "${OLD_BTN_RIGHT:-}" ]] && kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "$OLD_BTN_RIGHT"
+  kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library  "${OLD_DECO_LIBRARY:-org.kde.breeze}"
+  kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key theme    "${OLD_DECO_THEME:-Breeze}"
+  [[ -n "${OLD_BTN_LEFT:-}"  ]] && kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnLeft  "$OLD_BTN_LEFT"
+  [[ -n "${OLD_BTN_RIGHT:-}" ]] && kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnRight "$OLD_BTN_RIGHT"
   [[ -n "${OLD_PLASMATHEME:-}" ]] && kwriteconfig6 --file plasmarc --group Theme --key name "$OLD_PLASMATHEME"
   [[ -n "${OLD_ICONS:-}" ]] && kwriteconfig6 --file kdeglobals --group Icons --key Theme "$OLD_ICONS"
   if [[ -n "${OLD_CURSOR:-}" ]]; then

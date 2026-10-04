@@ -102,10 +102,26 @@ fi
 echo "live settings"
 printf '  %-22s %s\n' "global theme"   "$live_lnf"
 printf '  %-22s %s\n' "colour scheme"  "$(kreadconfig6 --file kdeglobals --group General --key ColorScheme)"
-printf '  %-22s %s\n' "widget style"   "$(kreadconfig6 --file kdeglobals --group KDE     --key widgetStyle)"
+live_style="$(kreadconfig6 --file kdeglobals --group KDE --key widgetStyle)"
+printf '  %-22s %s\n' "widget style"   "${live_style:-<unset>}"
+# contents/defaults sets widgetStyle, so a different live value means either
+# plasma-apply-lookandfeel did not write it or it was changed afterwards. The colour
+# scheme still reaches a non-Breeze Qt style through the platform theme, so this is
+# not necessarily a returning colour seam - what changes is how widgets are DRAWN
+# (frames, buttons, scrollbars, toolbar shape), which is not what this theme was
+# designed or previewed against. Worth knowing, so it is a check rather than a line
+# of output; look at a toolbar before deciding whether you mind.
+case "$live_style" in
+  "$WIDGET_STYLE") ok "widget style is $WIDGET_STYLE, as the look-and-feel declares" ;;
+  "")   note "widgetStyle unset - Qt falls back to the platform default" ;;
+  *)    bad "widget style is '$live_style' but this theme declares $WIDGET_STYLE, so the"
+        bad "  look-and-feel is not getting the application style it was built against."
+        bad "  Either plasma-apply-lookandfeel did not write it or it changed since. Fix:"
+        bad "  kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle $WIDGET_STYLE" ;;
+esac
 printf '  %-22s %s\n' "icons"          "$(kreadconfig6 --file kdeglobals --group Icons   --key Theme)"
 printf '  %-22s %s\n' "plasma style"   "$(kreadconfig6 --file plasmarc   --group Theme   --key name)"
-dlib="$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key library)"
+dlib="$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library)"
 printf '  %-22s %s\n' "deco library"   "$dlib"
 case "$dlib" in
   *aurorae*)
@@ -120,9 +136,16 @@ case "$dlib" in
   "")        ;;
   *)         note "not an Aurorae plugin - the $ID decoration will not load" ;;
 esac
-printf '  %-22s %s\n' "deco theme"     "$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme)"
-printf '  %-22s %s\n' "buttons left"   "$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft)"
-printf '  %-22s %s\n' "buttons right"  "$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight)"
+printf '  %-22s %s\n' "deco theme"     "$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key theme)"
+bl="$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnLeft)"
+br="$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnRight)"
+printf '  %-22s %s\n' "buttons left"   "${bl:-<unset>}"
+printf '  %-22s %s\n' "buttons right"  "${br:-<unset>}"
+# Plasma 6.6 drops these two when applying a look-and-feel (WhiteSur-kde#130), which
+# is why install.sh writes them explicitly. If they are wrong, that write did not run.
+[[ "$bl" == "$BUTTONS_LEFT" && "$br" == "$BUTTONS_RIGHT" ]] \
+  && ok "button order is $BUTTONS_LEFT / $BUTTONS_RIGHT, as theme.env sets" \
+  || note "button order is '${bl:-<unset>}' / '${br:-<unset>}', theme.env wants $BUTTONS_LEFT / $BUTTONS_RIGHT - re-run install.sh --apply"
 
 echo "Plasma style internals"
 if [[ -f "$STYLE_DEST/widgets/plasmoidheading.svg" ]]; then

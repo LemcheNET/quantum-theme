@@ -2,7 +2,7 @@
 type: runbook
 subject: Workstation desktop
 artifact: Quantum global themes for KDE Plasma 6
-status: untested — consolidated from two forked packages on 2026-10-04; offline gates in tests/ pass, nothing in bin/ has been run on a Plasma session since the merge
+status: partly verified — verify.sh --variant light passed on quantum 2026-10-04 (every check ok, one finding: widgetStyle was Fusion, not the declared Breeze); offline gates in tests/ pass; the dark variant and every state-changing script are still untested since the merge
 owner: Valdemar Lemche
 concepts: [KDE Plasma, Aurorae, look-and-feel package, Plasma style, window decoration, breeze-gtk]
 tags: [desktop, plasma, theming, kde]
@@ -28,9 +28,10 @@ The two variants are one codebase. Everything that differs between them lives in
 `variants/<slug>/variant.env`; everything else is shared. See
 [How the variants stay in step](#how-the-variants-stay-in-step) for why that matters.
 
-**Nothing here is verified since the merge.** The offline gates in `tests/` pass. The
-scripts in `bin/` are **untested** on a live session in their current form. Start with
-the read-only `bin/verify.sh`.
+**Partly verified.** `bin/verify.sh --variant light` passes on `quantum` against a live
+install. The dark variant and every state-changing script — `install.sh`, `gtk.sh`,
+`icons.sh`, `retint.sh`, `opacity.sh`, `buttons.sh`, `whichbg.sh`, `uninstall.sh` — are
+**untested** in their consolidated form. Start with the read-only `bin/verify.sh`.
 
 ## The two variants
 
@@ -45,8 +46,17 @@ the read-only `bin/verify.sh`.
 | cursors | `breeze_cursors` | `breeze_cursors` |
 | portal preference | `prefer-light` | `prefer-dark` |
 
-Shared by both: Breeze application style, no desktop layout, buttons on the right
-(`ButtonsOnLeft=M`, `ButtonsOnRight=IAX`), panel at 65% and popups at 75%.
+Shared by both, and defined once in `theme.env`: Breeze application style, no desktop
+layout, buttons on the right (`ButtonsOnLeft=M`, `ButtonsOnRight=IAX`), the Aurorae
+plugin id, and the `kwinrc` group name. Panel at 65% and popups at 75%.
+
+**The application style is checked, not just reported.** `contents/defaults` sets
+`widgetStyle`, so a different live value means either `plasma-apply-lookandfeel` did not
+write it or something changed it since — `verify.sh` found Fusion on `quantum` while the
+look-and-feel declared Breeze. The colour scheme does still reach a non-Breeze Qt style
+through the platform theme, so this is not necessarily a returning colour seam; what
+changes is how widgets are *drawn*, which is not what the theme was designed or previewed
+against. It is now an assertion rather than a printed value.
 
 ## One colour across the whole window
 
@@ -106,8 +116,11 @@ look-and-feel's `contents/defaults` and accept the toolbar step.
 [KDE Store 2234789](https://store.kde.org/p/2234789/), source
 [github.com/L4ki/Slot-Plasma-Themes](https://github.com/L4ki/Slot-Plasma-Themes).
 
-**Not bundled.** 19,873 files and 130 MiB, against about 700 KiB for everything else in a
-variant. It is a dependency, fetched on demand:
+**Not bundled.** `Slot-Light-Icons` measured **13,435 files and 182 MiB** installed on
+`quantum` (2026-10-04), against about 700 KiB for everything else in a variant. That is
+two orders of magnitude, so it is a dependency, fetched on demand. Run
+`bin/icons.sh --variant <slug> --check` for the figures on your own host rather than
+trusting these — upstream changes them.
 
 ```bash
 bin/icons.sh --variant dark              # sparse clone, install to ~/.local/share/icons
@@ -118,10 +131,14 @@ bin/icons.sh --variant dark --from <dir> # install from a clone you already have
 
 The sparse clone pulls only the one icon theme, not the 559 MiB repo.
 
-`--dedupe` is worth knowing about: **62% of the theme is byte-identical duplicates**
-(130 MiB on disk, 49 MiB unique — measured, not estimated). Hardlinking reclaims about
-81 MiB. The catch is that editing one icon afterwards edits every identical copy, so it
-is opt-in. Re-run without `--dedupe` to get a clean tree back.
+`--dedupe` is worth knowing about: a large fraction of the theme is byte-identical
+duplicates, and hardlinking them reclaims real space. **The ratio is not verified for the
+currently installed version** — an earlier note here claimed 62% against a 130 MiB
+baseline, and the install on `quantum` measures 182 MiB, so that figure was either from a
+different upstream revision or from the other variant. `icons.sh --dedupe` prints the
+actual before and after, which is the number to trust. The catch is that editing one icon
+afterwards edits every identical copy, so it is opt-in. Re-run without `--dedupe` to get
+a clean tree back.
 
 Two things about these themes that matter here:
 

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Fetch and install this variant's Slot icon theme (l4k1, GPLv3).
 #
-# Not bundled: 19,873 files and 130 MiB, which is two orders of magnitude bigger than
-# everything else here put together. It is a dependency, fetched on demand.
+# Not bundled: measured at 13,435 files and 182 MiB on quantum (light, 2026-10-04), two
+# orders of magnitude bigger than everything else here put together. It is a dependency,
+# fetched on demand. Use --check for the figures on your host; upstream changes them.
 #
 # Usage:  icons.sh --variant light              # sparse clone, install to ~/.local/share/icons
-#         icons.sh --variant light --dedupe     # hardlink identical files afterwards (~62% smaller, measured)
+#         icons.sh --variant light --dedupe     # hardlink identical files afterwards (prints real before/after)
 #         icons.sh --variant light --from <dir> # install from a clone or download you already have
 #         icons.sh --variant light --check      # report what is installed, change nothing
 #
-# UNTESTED. Downloads ~50-130 MiB over the network.
+# UNTESTED. Downloads on the order of 100-200 MiB over the network.
 set -euo pipefail
 . "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 quantum_init "$@"; set -- "${QUANTUM_ARGS[@]+"${QUANTUM_ARGS[@]}"}"

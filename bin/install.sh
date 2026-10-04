@@ -52,7 +52,7 @@ else
   warn "without it the pointer falls back to the X11 default black arrow"
 fi
 
-# The icon theme is a dependency, not part of this package: 19,873 files, 130 MiB.
+# The icon theme is a dependency, not part of this package: ~13k files, ~180 MiB.
 ICON_FOUND=""
 for d in "$DATA/icons/$ICON_THEME" "/usr/share/icons/$ICON_THEME"; do
   [[ -f "$d/index.theme" ]] && { ICON_FOUND="$d"; break; }
@@ -73,7 +73,7 @@ fi
 say "Aurorae decoration plugins present:"
 find /usr/lib*/*/qt6/plugins/org.kde.kdecoration* /usr/lib/qt6/plugins/org.kde.kdecoration* \
      -iname '*aurorae*' 2>/dev/null | sed 's/^/    /' || true
-say "library id before: $(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key library 2>/dev/null || echo '<unset>')"
+say "library id before: $(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library 2>/dev/null || echo '<unset>')"
 kwriteconfig6 --help >/dev/null 2>&1 || warn "kwriteconfig6 not found - --apply button fix-up will be skipped"
 
 # ---- install (idempotent) ---------------------------------------------
@@ -122,10 +122,10 @@ say "backing up current appearance settings to $BAK"
   echo "OLD_PLASMATHEME=$(kreadconfig6 --file plasmarc --group Theme --key name 2>/dev/null || true)"
   echo "OLD_BLUR=$(kreadconfig6 --file kwinrc --group Plugins --key blurEnabled 2>/dev/null || true)"
   echo "OLD_CURSOR=$(kreadconfig6 --file kcminputrc --group Mouse --key cursorTheme 2>/dev/null || true)"
-  echo "OLD_DECO_LIBRARY=$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key library 2>/dev/null || true)"
-  echo "OLD_DECO_THEME=$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme 2>/dev/null || true)"
-  echo "OLD_BTN_LEFT=$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft 2>/dev/null || true)"
-  echo "OLD_BTN_RIGHT=$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight 2>/dev/null || true)"
+  echo "OLD_DECO_LIBRARY=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library 2>/dev/null || true)"
+  echo "OLD_DECO_THEME=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key theme 2>/dev/null || true)"
+  echo "OLD_BTN_LEFT=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnLeft 2>/dev/null || true)"
+  echo "OLD_BTN_RIGHT=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnRight 2>/dev/null || true)"
 } > "$BAK"
 ln -sfn "$BAK" "$STATE/backup-latest.env"
 for c in kdeglobals kwinrc plasmarc kcminputrc; do
@@ -153,8 +153,8 @@ if command -v kwriteconfig6 >/dev/null; then
   # NOT library/theme: plasma-apply-lookandfeel has just written those from
   # contents/defaults. Writing them again here overwrote the correct value with a
   # stale pre-check reading in v2.0 - the decoration silently fell back to Breeze.
-  kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft M
-  kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight IAX
+  kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnLeft  "$BUTTONS_LEFT"
+  kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnRight "$BUTTONS_RIGHT"
 fi
 
 # A newly installed Plasma style is not picked up until the SVG cache is dropped.
@@ -178,8 +178,8 @@ if [[ -n "$CURSOR_FOUND" ]] && command -v plasma-apply-cursortheme >/dev/null; t
     || warn "plasma-apply-cursortheme failed; kcminputrc is still set, a re-login will pick it up"
 fi
 
-lib_after="$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key library 2>/dev/null || true)"
-thm_after="$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme 2>/dev/null || true)"
+lib_after="$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library 2>/dev/null || true)"
+thm_after="$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key theme 2>/dev/null || true)"
 say "library id after:  $lib_after   theme: $thm_after"
 case "$lib_after" in
   *aurorae*) ;;

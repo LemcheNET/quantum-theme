@@ -49,12 +49,9 @@ LICENSES = {
 
 BASE_LABEL = {"BreezeLight": "Breeze Light", "BreezeDark": "Breeze Dark"}
 
-# Variant-neutral and deliberately the same for both: Breeze button convention, no
-# panel layout, and the plugin id KWin itself writes on Plasma 6.6.
-AURORAE_PLUGIN = "org.kde.kwin.aurorae.v2"
-BUTTONS_LEFT = "M"
-BUTTONS_RIGHT = "IAX"
-WIDGET_STYLE = "Breeze"
+# Variant-neutral settings come from theme.env, which lib/common.sh also sources, so
+# contents/defaults and the scripts cannot disagree about them. Loaded in main().
+THEME = {}
 
 DESKTOP_TEMPLATE = """[Desktop Entry]
 Name={name}
@@ -93,7 +90,7 @@ LayoutName=org.kde.breeze.desktop
 [kwinrc][WindowSwitcher]
 LayoutName=org.kde.breeze.desktop
 
-[kwinrc][org.kde.kdecoration2]
+[kwinrc][{group}]
 library={plugin}
 theme=__aurorae__svg__{id}
 ButtonsOnLeft={buttons_left}
@@ -131,12 +128,13 @@ def render_desktop(env):
 def render_defaults(env):
     return DEFAULTS_TEMPLATE.format(
         id=env["ID"],
-        widget_style=WIDGET_STYLE,
+        widget_style=THEME["WIDGET_STYLE"],
         icon_theme=env["ICON_THEME"],
         cursor_theme=env["CURSOR_THEME"],
-        plugin=AURORAE_PLUGIN,
-        buttons_left=BUTTONS_LEFT,
-        buttons_right=BUTTONS_RIGHT,
+        group=THEME["KDECORATION_GROUP"],
+        plugin=THEME["AURORAE_PLUGIN"],
+        buttons_left=THEME["BUTTONS_LEFT"],
+        buttons_right=THEME["BUTTONS_RIGHT"],
     )
 
 
@@ -167,6 +165,7 @@ def stamp(kind, path, env):
 
 def main():
     check = "--check" in sys.argv[1:]
+    THEME.update(read_env(ROOT / "theme.env"))
     stale = []
     for env_file in sorted((ROOT / "variants").glob("*/variant.env")):
         slug = env_file.parent.name

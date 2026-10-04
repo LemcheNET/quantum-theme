@@ -59,7 +59,8 @@ quantum_variant_get() {
 quantum_vdir()        { printf '%s\n' "$QUANTUM_ROOT/variants/$1"; }
 quantum_src_aurorae() { printf '%s\n' "$QUANTUM_ROOT/variants/$1/aurorae/$(quantum_variant_get "$1" ID)"; }
 
-QUANTUM_REQUIRED_KEYS=(SLUG ID NAME BASE_SCHEME ICON_THEME ICON_SUBDIR CURSOR_THEME PORTAL_PREF GTK_PREFER_DARK)
+QUANTUM_REQUIRED_KEYS=(SLUG ID NAME BASE_SCHEME ICON_THEME ICON_SUBDIR CURSOR_THEME PORTAL_PREF GTK_PREFER_DARK
+                       WIDGET_STYLE BUTTONS_LEFT BUTTONS_RIGHT AURORAE_PLUGIN KDECORATION_GROUP)
 
 quantum_init() {
   QUANTUM_ARGS=()
@@ -90,8 +91,11 @@ quantum_init() {
   [[ -n "$want" ]] || die "which variant? pass --variant <$(quantum_variants | paste -sd'|' -)>, set QUANTUM_VARIANT, or run variants/<slug>/$(basename "$0")"
   quantum_is_variant "$want" || die "no such variant '$want'. Available: $(quantum_variants | tr '\n' ' ')"
 
-  # shellcheck disable=SC1090
-  set -a; . "$QUANTUM_ROOT/variants/$want/variant.env"; set +a
+  # shellcheck disable=SC1090,SC1091
+  set -a
+  . "$QUANTUM_ROOT/theme.env"                      # shared by every variant
+  . "$QUANTUM_ROOT/variants/$want/variant.env"     # this variant only
+  set +a
 
   local k
   for k in "${QUANTUM_REQUIRED_KEYS[@]}"; do
