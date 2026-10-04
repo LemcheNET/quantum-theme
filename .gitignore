@@ -1,0 +1,6 @@
+# nothing here is built in-tree, but release tarballs land in dist/
+/dist/
+*.kcache
+*.orig
+*.rej
+.whichbg-active

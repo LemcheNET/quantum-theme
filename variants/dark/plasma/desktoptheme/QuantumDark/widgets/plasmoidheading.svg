@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="64" viewBox="0 0 28 64"><metadata></metadata>
+  <defs>
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#fcfcfc;
+        stop-color:#fcfcfc;
+      }
+      .ColorScheme-Background {
+        color:#202326;
+        stop-color:#202326;
+      }
+      .ColorScheme-Highlight {
+        color:#3daee9;
+        stop-color:#3daee9;
+      }
+      .ColorScheme-ViewText {
+        color:#fcfcfc;
+        stop-color:#fcfcfc;
+      }
+      .ColorScheme-ViewBackground {
+        color:#141618;
+        stop-color:#141618;
+      }
+      .ColorScheme-ButtonText {
+        color:#fcfcfc;
+        stop-color:#fcfcfc;
+      }
+      .ColorScheme-ButtonBackground {
+        color:#202326;
+        stop-color:#202326;
+      }
+      .ColorScheme-Complement {
+        color:#202326;
+        stop-color:#202326;
+      }
+      .ColorScheme-Contrast {
+        color:#fcfcfc;
+        stop-color:#fcfcfc;
+      }
+    </style>
+  </defs>
+  <!-- widgets/plasmoidheading.svg: header-* and footer-* nine-slices, corner 10px, tint 0.03,
+       content margin 4px (MUST equal dialogs/background.svg) -->
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-topleft"     d="M 0,10 A 10,10 0 0 1 10,0 L 10,10 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-top"         x="10"   y="0"          width="8" height="10" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-topright"    d="M 18,0 A 10,10 0 0 1 28,10 L 18,10 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-left"        x="0"     y="10"        width="10" height="8" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-center"      x="10"   y="10"        width="8" height="8" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-right"       x="18" y="10"        width="10" height="8" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-bottomleft"  d="M 10,28 A 10,10 0 0 1 0,18 L 10,18 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-bottom"      x="10"   y="18"      width="8" height="10" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="header-bottomright" d="M 28,18 A 10,10 0 0 1 18,28 L 18,18 Z" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-topleft"     d="M 0,46 A 10,10 0 0 1 10,36 L 10,46 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-top"         x="10"   y="36"          width="8" height="10" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-topright"    d="M 18,36 A 10,10 0 0 1 28,46 L 18,46 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-left"        x="0"     y="46"        width="10" height="8" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-center"      x="10"   y="46"        width="8" height="8" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-right"       x="18" y="46"        width="10" height="8" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-bottomleft"  d="M 10,64 A 10,10 0 0 1 0,54 L 10,54 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-bottom"      x="10"   y="54"      width="8" height="10" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Text" opacity="0.03" id="footer-bottomright" d="M 28,54 A 10,10 0 0 1 18,64 L 18,54 Z" />
+  <!-- layout hints; zero opacity, geometry only -->
+  <rect id="hint-top-margin"    x="10" y="0"          width="8" height="4" opacity="0" />
+  <rect id="hint-bottom-margin" x="10" y="60" width="8" height="4" opacity="0" />
+  <rect id="hint-left-margin"   x="0"   y="10"        width="4" height="8" opacity="0" />
+  <rect id="hint-right-margin"  x="24" y="10" width="4" height="8" opacity="0" />
+  <rect id="hint-stretch-borders" x="0" y="0" width="1" height="1" opacity="0" />
+</svg>

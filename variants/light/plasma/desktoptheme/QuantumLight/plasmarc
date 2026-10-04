@@ -1,0 +1,26 @@
+# Quantum Light - theme properties
+# Everything this theme does not ship comes from Breeze.
+[Settings]
+FallbackTheme=default
+
+# Plasma asks the compositor to blur behind its own surfaces.
+[BlurBehindEffect]
+enabled=true
+
+# OFF on purpose, and this is the setting that decides whether the theme reads as glass.
+#
+# KWin's background-contrast effect homogenises whatever sits behind a translucent
+# surface so text stays legible. Over a dark, fairly uniform wallpaper that erases every
+# cue that the surface is transparent at all: measured on quantum it turned a 75% popup
+# into a flat #BCBDBD that looked like opaque grey paint. The transparency was working
+# the whole time; the effect was hiding it.
+#
+# Turn it back on if you move to a busy or light wallpaper and popup text gets hard to
+# read. Reasonable starting values: contrast=0.2 intensity=1.1 saturation=1.1.
+[ContrastEffect]
+enabled=false
+
+# Off on purpose: adaptive turns the panel opaque whenever a window is maximised,
+# which reads as "the translucency stopped working". Set true if you prefer that.
+[AdaptiveTransparency]
+enabled=false

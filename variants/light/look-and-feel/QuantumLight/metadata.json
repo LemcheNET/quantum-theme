@@ -1,0 +1,23 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Valdemar Lemche",
+                "Email": "valdemar@lemche.net"
+            }
+        ],
+        "Category": "Global Themes (Plasma 6)",
+        "Description": "Breeze Light throughout, with the Moe Aurorae window decoration and a translucent Plasma style. Carries no panel layout, so applying it changes appearance only.",
+        "EnabledByDefault": true,
+        "Id": "QuantumLight",
+        "Keywords": "Desktop;Workspace;Appearance;Look and Feel;",
+        "License": "GPL-3.0-or-later",
+        "Name": "Quantum Light",
+        "ServiceTypes": [
+            "Plasma/LookAndFeel"
+        ],
+        "Version": "2.1.0",
+        "X-Plasma-APIVersion": "2"
+    }
+}

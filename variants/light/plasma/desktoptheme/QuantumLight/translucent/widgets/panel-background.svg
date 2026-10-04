@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><metadata></metadata>
+  <defs>
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#232629;
+        stop-color:#232629;
+      }
+      .ColorScheme-Background {
+        color:#eff0f1;
+        stop-color:#eff0f1;
+      }
+      .ColorScheme-Highlight {
+        color:#3daee9;
+        stop-color:#3daee9;
+      }
+      .ColorScheme-ViewText {
+        color:#232629;
+        stop-color:#232629;
+      }
+      .ColorScheme-ViewBackground {
+        color:#fcfcfc;
+        stop-color:#fcfcfc;
+      }
+      .ColorScheme-ButtonText {
+        color:#232629;
+        stop-color:#232629;
+      }
+      .ColorScheme-ButtonBackground {
+        color:#eff0f1;
+        stop-color:#eff0f1;
+      }
+      .ColorScheme-Complement {
+        color:#eff0f1;
+        stop-color:#eff0f1;
+      }
+      .ColorScheme-Contrast {
+        color:#232629;
+        stop-color:#232629;
+      }
+    </style>
+  </defs>
+  <!-- nine-slice: widgets/panel-background.svg, corner 6px, opacity 0.82, content margin 2px -->
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="topleft"     d="M 0,6 A 6,6 0 0 1 6,0 L 6,6 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="top"         x="6"   y="0"     width="8" height="6" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="topright"    d="M 14,0 A 6,6 0 0 1 20,6 L 14,6 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="left"        x="0"     y="6"   width="6" height="8" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="center"      x="6"   y="6"   width="8" height="8" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="right"       x="14" y="6"   width="6" height="8" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="bottomleft"  d="M 6,20 A 6,6 0 0 1 0,14 L 6,14 Z" />
+  <rect style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="bottom"      x="6"   y="14" width="8" height="6" />
+  <path style="fill:currentColor;fill-opacity:1;stroke:none" class="ColorScheme-Background" opacity="0.65" id="bottomright" d="M 20,14 A 6,6 0 0 1 14,20 L 14,14 Z" />
+  <!-- layout hints; zero opacity, geometry only -->
+  <rect id="hint-top-margin"    x="6" y="0"             width="8" height="2" opacity="0" />
+  <rect id="hint-bottom-margin" x="6" y="18"    width="8" height="2" opacity="0" />
+  <rect id="hint-left-margin"   x="0"   y="6"           width="2" height="8" opacity="0" />
+  <rect id="hint-right-margin"  x="18" y="6"    width="2" height="8" opacity="0" />
+</svg>

@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Valdemar Lemche",
+                "Email": "valdemar@lemche.net"
+            }
+        ],
+        "Category": "",
+        "Description": "Breeze Light with a translucent panel, popups and plasmoids. Inherits every asset it does not override from Breeze.",
+        "EnabledByDefault": true,
+        "Id": "QuantumLight",
+        "License": "LGPL-3.0-or-later",
+        "Name": "Quantum Light",
+        "Version": "2.1.0"
+    },
+    "X-Plasma-API": "5.0"
+}

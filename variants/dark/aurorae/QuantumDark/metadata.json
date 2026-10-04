@@ -1,0 +1,27 @@
+{
+    "KPackageStructure": "aurorae",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "jomada",
+                "Email": "gicalucejo@gmail.com"
+            },
+            {
+                "Name": "Valdemar Lemche",
+                "Email": "valdemar@lemche.net"
+            }
+        ],
+        "Category": "Plasma 6 Window Decorations",
+        "Description": "Moe window decorations by jomada, repackaged under the id QuantumDark for the Quantum Dark global theme so an upstream Moe update cannot change your titlebars. decoration.svg is retinted to the window background; the other seven SVGs are jomada's artwork unmodified.",
+        "EnabledByDefault": true,
+        "Id": "QuantumDark",
+        "License": "GPL-3.0-or-later",
+        "Name": "Quantum Dark",
+        "ServiceTypes": [
+            "aurorae"
+        ],
+        "Version": "2.1.0",
+        "Website": "https://gitlab.com/jomada/moe-theme",
+        "X-KDE-PluginInfo-blur": false
+    }
+}

@@ -1,0 +1,43 @@
+# Quantum Light - Aurorae theme config
+# Layout values are jomada's originals from Moerc and are unmodified.
+# Text colours are retuned to Breeze Light's window-title foreground.
+
+[General]
+ActiveTextColor=35,38,41
+InactiveTextColor=110,113,115
+TitleAlignment=Center
+TitleVerticalAlignment=Center
+UseTextShadow=true
+ActiveTextShadowColor=255,255,255,255
+InactiveTextShadowColor=255,255,255,255
+TextShadowOffsetX=0
+TextShadowOffsetY=1
+LeftButtons=XIA
+Shadow=true
+Animation=1
+
+[Layout]
+BorderLeft=2
+BorderRight=2
+BorderBottom=5
+TitleEdgeTop=4
+TitleEdgeBottom=4
+TitleEdgeLeft=7
+TitleEdgeRight=7
+TitleBorderLeft=3
+TitleBorderRight=3
+TitleHeight=15
+ButtonWidth=22
+ButtonHeight=22
+ButtonSpacing=8
+ButtonMarginTop=2
+ButtonMarginLeft=3
+ExplicitButtonSpacer=0
+PaddingTop=35
+PaddingBottom=90
+PaddingRight=76
+PaddingLeft=76
+TitleEdgeTopMaximized=4
+TitleEdgeBottomMaximized=4
+TitleEdgeLeftMaximized=4
+TitleEdgeRightMaximized=4
