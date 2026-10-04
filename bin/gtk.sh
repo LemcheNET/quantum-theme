@@ -87,6 +87,7 @@ if [[ "${1:-}" == "--libadwaita" || "${2:-}" == "--libadwaita" ]]; then
   cp "$DEST/gtk-4.0/gtk.css" "$CONF/gtk-4.0/gtk.css"
   cp -r "$DEST/assets" "$CONF/gtk-4.0/" 2>/dev/null || true
   warn "this overrides libadwaita globally. If a GTK4 app misrenders, delete"
+  # shellcheck disable=SC2088  # prose for the reader, not a path to expand
   warn "~/.config/gtk-4.0/gtk.css and restart it."
 fi
 

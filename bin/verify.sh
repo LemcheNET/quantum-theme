@@ -267,6 +267,7 @@ case "$live_cursor" in
   "")              note "unset - apply the global theme, or: plasma-apply-cursortheme $CURSOR_THEME" ;;
   *)               note "is '$live_cursor', this variant sets '$CURSOR_THEME' - apply the global theme to change it" ;;
 esac
+# shellcheck disable=SC2088  # the tilde is prose; the test above uses $HOME
 [[ -f "$HOME/.icons/default/index.theme" ]] && note "~/.icons/default/index.theme exists: $(grep -m1 -i '^Inherits' "$HOME/.icons/default/index.theme" 2>/dev/null) - legacy XCursor override, it can win over kcminputrc for some X11/GTK apps"
 
 echo "translucency prerequisites"

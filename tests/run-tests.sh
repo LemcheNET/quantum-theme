@@ -10,7 +10,7 @@
 # GPL'd artwork on its way through a file bridge.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
-cd "$ROOT"
+cd "$ROOT" || { echo "cannot cd to $ROOT" >&2; exit 1; }
 
 fails=0
 pass() { printf '  \033[1;32mok\033[0m    %s\n' "$*"; }

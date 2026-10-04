@@ -25,6 +25,7 @@
 #         ... --only dark                   restrict any of the above to one variant
 # UNTESTED.
 set -euo pipefail
+# shellcheck disable=SC2034  # read by quantum_init in lib/common.sh, sourced next
 QUANTUM_VARIANT_OPTIONAL=1
 . "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 quantum_init "$@"; set -- "${QUANTUM_ARGS[@]+"${QUANTUM_ARGS[@]}"}"

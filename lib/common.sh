@@ -16,6 +16,14 @@
 #   . "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 #   quantum_init "$@"; set -- "${QUANTUM_ARGS[@]+"${QUANTUM_ARGS[@]}"}"
 
+# Almost every variable here is defined for the scripts in bin/ to read after they
+# source this file, which the linter cannot see, so SC2034 ("appears unused") is off
+# for the whole file. That is the file's job. A directive placed mid-file would cover
+# only the next command, and a repo-wide setting would hide real findings in bin/.
+# (Note: a comment line must not begin with the linter's own name, or it is parsed as
+# a malformed directive.)
+# shellcheck disable=SC2034
+
 # ---- paths -------------------------------------------------------------------
 QUANTUM_ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -49,8 +57,9 @@ quantum_is_variant() {
 # Read one key out of another variant's variant.env without disturbing ours.
 # Usage: quantum_variant_get <slug> <KEY>
 quantum_variant_get() {
-  local slug="$1" key="$2" f="$QUANTUM_ROOT/variants/$1/variant.env"
+  local key="$2" f="$QUANTUM_ROOT/variants/$1/variant.env"
   [[ -f "$f" ]] || return 1
+  # shellcheck disable=SC1090  # the path is a variant chosen at run time
   ( set -a; . "$f"; printf '%s\n' "${!key:-}" )
 }
 
@@ -91,9 +100,10 @@ quantum_init() {
   [[ -n "$want" ]] || die "which variant? pass --variant <$(quantum_variants | paste -sd'|' -)>, set QUANTUM_VARIANT, or run variants/<slug>/$(basename "$0")"
   quantum_is_variant "$want" || die "no such variant '$want'. Available: $(quantum_variants | tr '\n' ' ')"
 
-  # shellcheck disable=SC1090,SC1091
   set -a
+  # shellcheck source=/dev/null
   . "$QUANTUM_ROOT/theme.env"                      # shared by every variant
+  # shellcheck source=/dev/null
   . "$QUANTUM_ROOT/variants/$want/variant.env"     # this variant only
   set +a
 
