@@ -44,7 +44,7 @@ esac
 # Cursors: breeze_cursors ships with Breeze on Kubuntu (package breeze-cursor-theme).
 # Which variant each theme wants is in variants/<slug>/variant.env.
 CURSOR_FOUND=""
-for d in "$DATA/icons/$CURSOR_THEME" "/usr/share/icons/$CURSOR_THEME"; do
+for d in "$DATA/icons/$CURSOR_THEME" "$SYSDATA/icons/$CURSOR_THEME"; do
   [[ -d "$d/cursors" ]] && { CURSOR_FOUND="$d"; break; }
 done
 if [[ -n "$CURSOR_FOUND" ]]; then
@@ -57,7 +57,7 @@ fi
 # The icon theme is a dependency, not part of this package: 13k-19k files and
 # 180-215 MiB depending on the variant.
 ICON_FOUND=""
-for d in "$DATA/icons/$ICON_THEME" "/usr/share/icons/$ICON_THEME"; do
+for d in "$DATA/icons/$ICON_THEME" "$SYSDATA/icons/$ICON_THEME"; do
   [[ -f "$d/index.theme" ]] && { ICON_FOUND="$d"; break; }
 done
 if [[ -n "$ICON_FOUND" ]]; then
@@ -74,8 +74,8 @@ fi
 
 # Which Aurorae plugins does this host actually have? Reported, not guessed.
 say "Aurorae decoration plugins present:"
-find /usr/lib*/*/qt6/plugins/org.kde.kdecoration* /usr/lib/qt6/plugins/org.kde.kdecoration* \
-     -iname '*aurorae*' 2>/dev/null | sed 's/^/    /' || true
+# shellcheck disable=SC2086  # QT_PLUGIN_GLOBS is a deliberately unquoted glob list
+find $QT_PLUGIN_GLOBS -iname '*aurorae*' 2>/dev/null | sed 's/^/    /' || true
 say "library id before: $(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library 2>/dev/null || echo '<unset>')"
 kwriteconfig6 --help >/dev/null 2>&1 || warn "kwriteconfig6 not found - --apply button fix-up will be skipped"
 
@@ -230,7 +230,7 @@ fi
 say "restarting plasmashell to load the Plasma style"
 if command -v kquitapp6 >/dev/null; then
   kquitapp6 plasmashell 2>/dev/null || true
-  sleep 2
+  sleep "${QUANTUM_RESTART_DELAY:-2}"
   (setsid plasmashell >/dev/null 2>&1 &)
 else
   warn "kquitapp6 not found - run 'plasmashell --replace &' yourself"

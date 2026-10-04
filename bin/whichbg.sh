@@ -24,7 +24,7 @@ SRC="$STYLE_SRC"
 reload() {
   rm -rf "$CACHE"/plasma_theme_*.kcache "$CACHE"/plasma-svgelements* 2>/dev/null || true
   if command -v kquitapp6 >/dev/null; then
-    kquitapp6 plasmashell 2>/dev/null || true; sleep 2; (setsid plasmashell >/dev/null 2>&1 &)
+    kquitapp6 plasmashell 2>/dev/null || true; sleep "${QUANTUM_RESTART_DELAY:-2}"; (setsid plasmashell >/dev/null 2>&1 &)
   fi
 }
 

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # Offline checks. No Plasma session needed, nothing installed, nothing changed.
 #
-#   tests/run-tests.sh
+#   tests/run-tests.sh                 static gates, then the unit suites
+#   tests/run-tests.sh --static-only   just the gates below
+#
+# The unit suites live in tests/unit/ and are run by tests/run-unit-tests.sh. This file
+# is the static half: lint, shape, licensing and generated-file freshness - the things
+# that need no sandbox because they only read the repo.
 #
 # These are the gates that stop the drift this repo was created to end. The two
 # variants were forked before, and every failure below is something that went wrong
@@ -17,7 +22,7 @@ pass() { printf '  \033[1;32mok\033[0m    %s\n' "$*"; }
 fail() { printf '  \033[1;31mFAIL\033[0m  %s\n' "$*"; fails=$((fails+1)); }
 head_() { printf '\033[1m%s\033[0m\n' "$*"; }
 
-mapfile -t SCRIPTS < <(find bin lib tests -name '*.sh' -type f; ls ./*.sh 2>/dev/null)
+mapfile -t SCRIPTS < <(find bin lib tests -name '*.sh' -type f | sort; ls ./*.sh 2>/dev/null)
 mapfile -t VARIANTS < <(find variants -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
 
 head_ "shell syntax"
@@ -151,8 +156,16 @@ done
 
 echo
 if [[ $fails -eq 0 ]]; then
-  printf '\033[1;32mall checks passed\033[0m\n'
+  printf '\033[1;32mall static checks passed\033[0m\n'
 else
-  printf '\033[1;31m%d check(s) failed\033[0m\n' "$fails"
+  printf '\033[1;31m%d static check(s) failed\033[0m\n' "$fails"
 fi
+
+if [[ "${1:-}" == "--static-only" ]]; then
+  exit $(( fails > 0 ))
+fi
+
+echo
+head_ "unit suites"
+./tests/run-unit-tests.sh || fails=$((fails+1))
 exit $(( fails > 0 ))

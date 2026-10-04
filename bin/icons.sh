@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
     --dedupe) DEDUPE=1; shift ;;
     --from)   FROM="${2:?--from needs a directory}"; shift 2 ;;
     --check)
-      for d in "$DEST" "/usr/share/icons/$ICON_THEME"; do
+      for d in "$DEST" "$SYSDATA/icons/$ICON_THEME"; do
         if [[ -f "$d/index.theme" ]]; then
           say "installed: $d"
           printf '    %s\n' "$(grep -m1 '^Inherits=' "$d/index.theme")"

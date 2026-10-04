@@ -495,7 +495,10 @@ quantum-theme/
 ├── packaging/
 │   ├── stamp-metadata.py         generates every metadata/defaults file; --check in CI
 │   └── make-release.sh           builds the store tarballs and the source tarball
-├── tests/run-tests.sh            offline gates; no Plasma session needed
+├── tests/
+│   ├── run-tests.sh              static gates, then the unit suites
+│   ├── run-unit-tests.sh         the unit suites alone
+│   └── unit/                     harness.sh plus eight test_*.sh, 255 checks
 └── install.sh  uninstall.sh  verify.sh    thin wrappers over bin/
 ```
 
@@ -598,6 +601,66 @@ So the fork is gone. What replaced it:
 - **Tree parity is asserted.** The test suite compares the file sets of every variant
   with the id substituted out, because the forked copies had lost files from one side
   before.
+
+## Tests
+
+```bash
+tests/run-tests.sh               # static gates, then the unit suites
+tests/run-tests.sh --static-only # lint, shape, licensing, generated-file freshness
+tests/run-unit-tests.sh          # the unit suites alone
+tests/run-unit-tests.sh uninstall    # one suite by name
+tests/run-unit-tests.sh --list   # what there is
+```
+
+**255 checks across eight suites, no dependencies beyond bash and python3.** No Plasma
+session, no root, and safe to run on a desktop that is currently using the theme.
+
+Each suite gets a sandbox: a throwaway `$HOME` with its own XDG directories, a fake
+`/usr/share` seeded with the real Breeze colour values measured on `quantum`, stub KDE
+binaries that record every call, and a private copy of this repo — because `retint.sh`,
+`opacity.sh` and `buttons.sh --base` all edit the source tree by design.
+
+The stubs are not no-ops. `kreadconfig6` and `kwriteconfig6` read and write real
+KConfig INI files where KDE puts them, because `buttons.sh` and `verify.sh` both *call*
+`kwriteconfig6` and then *parse the resulting file themselves*; a stub that kept values
+anywhere else would let those parses silently find nothing. `plasma-apply-lookandfeel`
+applies the package's own `contents/defaults`, so an install-then-verify test exercises
+the real data files rather than asserting that a command was called.
+
+| suite | what it pins down |
+|---|---|
+| `variant_resolution` | all four ways a variant is chosen, and every way of refusing to guess |
+| `colorscheme` | Header pulled to Window in both directions, idempotence, `--diff` writing nothing, and that the values come from the installed scheme rather than a constant |
+| `retint` | the 16 frame substitutions, idempotence, and that bad input leaves the artwork untouched |
+| `opacity` | the five SVGs, the `translucent/` copies, and the stacked Kickoff arithmetic — 75% + a 3% tint is 75.8%, not 78% |
+| `buttons` | the documented pixel table, writing every variant by default, `--only`, `--sync`, and drift reporting |
+| `install` | all three packages, the icon-theme refusal, the Plasma 6 gate, the applied state, the portal preference per variant, and that the backup never names the variant being installed |
+| `uninstall` | reverting to the variant's stock theme, the fallback chain, the sibling surviving, `--restore-backup` refusing a self-referential backup, and a double round trip leaving no residue |
+| `verify` | that a clean install has no failures, and that each verdict is about the right variant |
+
+Several cases exist because the behaviour was once wrong on a live host, and those are
+marked as such in the test files. The uninstall suite in particular encodes the three
+defects the first real round trip found.
+
+Three environment variables exist for the harness and are useful outside it:
+`QUANTUM_ROOT` (run the scripts against a tree other than their own),
+`QUANTUM_SYSTEM_DATA` (where the distribution's themes live, for prefixes other than
+`/usr/share`) and `QUANTUM_RESTART_DELAY` (seconds between quitting and relaunching
+plasmashell; the suite sets it to 0).
+
+### In CI
+
+`.github/workflows/ci.yml` runs on every pull request and on every push to `main` —
+which is how a merge arrives — in two parallel jobs:
+
+| job | needs | what it does |
+|---|---|---|
+| `static` | `shellcheck`, `reuse` | `tests/run-tests.sh --static-only`, with a step that fails if either linter is missing rather than letting the suite skip it |
+| `unit` | nothing | `tests/run-unit-tests.sh` |
+
+A `v*` tag additionally runs `release`, which requires both jobs, asserts that the tag
+matches `VERSION`, and builds the artifacts with `make-release.sh` — which runs the
+whole suite again, so the same gate covers the artifacts as the merge.
 
 ## Releases, and the KDE Store
 

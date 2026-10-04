@@ -25,10 +25,27 @@
 # shellcheck disable=SC2034
 
 # ---- paths -------------------------------------------------------------------
-QUANTUM_ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+# Derived from the calling script's location, which assumes a caller in bin/. A caller
+# elsewhere - the unit tests, or anyone writing their own wrapper - can set
+# QUANTUM_ROOT beforehand. It is validated rather than trusted, so a stale value left
+# exported in a shell cannot silently point the scripts at the wrong tree.
+if [[ -z "${QUANTUM_ROOT:-}" || ! -f "${QUANTUM_ROOT:-}/lib/common.sh" || ! -d "${QUANTUM_ROOT:-}/variants" ]]; then
+  QUANTUM_ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+fi
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}"
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}"
+
+# Where the distribution's own themes live. Overridable because /usr/share is not
+# universal - NixOS and Guix put it elsewhere - and because the unit tests need to
+# stand up a fake Breeze without root. Everything that reads a system theme goes
+# through these two, so there is one place to change.
+SYSDATA="${QUANTUM_SYSTEM_DATA:-/usr/share}"
+# Seconds to wait between quitting plasmashell and relaunching it. Two seconds is right
+# for a real session; the unit suite sets it to 0, since ~36 applies would otherwise
+# spend over a minute asleep.
+: "${QUANTUM_RESTART_DELAY:=2}"
+QT_PLUGIN_GLOBS="${QUANTUM_QT_PLUGIN_DIRS:-/usr/lib*/*/qt6/plugins/org.kde.kdecoration* /usr/lib/qt6/plugins/org.kde.kdecoration*}"
 
 # ---- output ------------------------------------------------------------------
 say()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
@@ -125,7 +142,7 @@ quantum_init() {
   LNF_DEST="$DATA/plasma/look-and-feel/$ID"
   GTK_DEST="$DATA/themes/$ID"
   SCHEME_DEST="$DATA/color-schemes/$ID.colors"
-  BASE_SCHEME_FILE="/usr/share/color-schemes/$BASE_SCHEME.colors"
+  BASE_SCHEME_FILE="$SYSDATA/color-schemes/$BASE_SCHEME.colors"
   STATE="${XDG_STATE_HOME:-$HOME/.local/state}/quantum-$SLUG"
 
   QUANTUM_VERSION="$(cat "$QUANTUM_ROOT/VERSION" 2>/dev/null || echo unknown)"

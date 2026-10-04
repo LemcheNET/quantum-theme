@@ -49,7 +49,7 @@ say "$NAME - rollback ($MODE)"
 
 lnf_exists() {
   local id="$1" d
-  for d in "$DATA/plasma/look-and-feel/$id" "/usr/share/plasma/look-and-feel/$id"; do
+  for d in "$DATA/plasma/look-and-feel/$id" "$SYSDATA/plasma/look-and-feel/$id"; do
     [[ -d "$d" ]] && return 0
   done
   return 1
@@ -140,5 +140,5 @@ if [[ -d "$STATE" ]]; then
   say "      kcminputrc. Copying one of those back is the most reliable rollback there is."
 fi
 command -v kbuildsycoca6 >/dev/null && kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
-command -v kquitapp6 >/dev/null && { kquitapp6 plasmashell 2>/dev/null || true; sleep 2; (setsid plasmashell >/dev/null 2>&1 &); }
+command -v kquitapp6 >/dev/null && { kquitapp6 plasmashell 2>/dev/null || true; sleep "${QUANTUM_RESTART_DELAY:-2}"; (setsid plasmashell >/dev/null 2>&1 &); }
 say "done. Verify with bin/verify.sh --variant $SLUG (it should now report the packages missing)"

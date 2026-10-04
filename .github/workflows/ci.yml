@@ -1,5 +1,6 @@
 name: ci
 
+# A merge to main arrives here as a push to main, so that is the merge gate.
 on:
   push:
     branches: [main]
@@ -7,9 +8,17 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A new push supersedes an in-flight run on the same ref, except on main and tags,
+# where every commit's result is worth keeping.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
-  checks:
+  static:
+    name: lint, shape and licensing
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: install the linters the suite uses when present
@@ -24,13 +33,23 @@ jobs:
         run: |
           command -v shellcheck
           command -v reuse
-      - name: tests/run-tests.sh
-        run: ./tests/run-tests.sh
+      - run: ./tests/run-tests.sh --static-only
+
+  unit:
+    name: unit suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      # No Plasma, no root, no apt packages: the suites stand up a throwaway $HOME, a
+      # fake /usr/share and stub KDE binaries. bash and python3 are all the runner needs.
+      - run: ./tests/run-unit-tests.sh
 
   release:
-    needs: checks
+    needs: [static, unit]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write        # creating the release; default GITHUB_TOKEN is read-only
     steps:
@@ -42,12 +61,14 @@ jobs:
           tag="${GITHUB_REF_NAME#v}"
           ver="$(cat VERSION)"
           [[ "$tag" == "$ver" ]] || { echo "tag $tag != VERSION $ver"; exit 1; }
-      - name: linters, same as the checks job
+      - name: linters, same as the static job
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
           pipx install reuse
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      # make-release.sh runs tests/run-tests.sh itself, so the full suite - static
+      # gates and unit suites - gates the artifacts as well as the merge.
       - run: ./packaging/make-release.sh
       - uses: softprops/action-gh-release@v2
         with:
@@ -61,6 +82,8 @@ jobs:
                 bin/icons.sh   --variant dark
                 bin/install.sh --variant dark --apply
                 bin/verify.sh  --variant dark
+
+            Rollback reverts to KDE's stock Breeze: `bin/uninstall.sh --variant dark`.
 
             The per-package tarballs are the KDE Store uploads. Installing the global
             theme alone does not pull in the decoration, the Plasma style or the icons —

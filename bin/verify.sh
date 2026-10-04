@@ -85,7 +85,7 @@ if [[ -f "$BASE_SCHEME_FILE" ]]; then
   # the scheme that is actually in use, which should be the derived one
   live_scheme="$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null)"
   active=""
-  for c in "$DATA/color-schemes/$live_scheme.colors" "/usr/share/color-schemes/$live_scheme.colors"; do
+  for c in "$DATA/color-schemes/$live_scheme.colors" "$SYSDATA/color-schemes/$live_scheme.colors"; do
     [[ -f "$c" ]] && { active="$c"; break; }
   done
   if [[ -n "$active" ]]; then
@@ -141,8 +141,8 @@ dlib="$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library)"
 printf '  %-22s %s\n' "deco library"   "$dlib"
 case "$dlib" in
   *aurorae*)
-    avail=$(find /usr/lib*/*/qt6/plugins/org.kde.kdecoration* /usr/lib/qt6/plugins/org.kde.kdecoration* \
-                 -iname "*aurorae*.so" 2>/dev/null | sed 's|.*/||; s|\.so$||' | grep -v '^kcm' | sort -u)
+    # shellcheck disable=SC2086  # QT_PLUGIN_GLOBS is a deliberately unquoted glob list
+    avail=$(find $QT_PLUGIN_GLOBS -iname "*aurorae*.so" 2>/dev/null | sed 's|.*/||; s|\.so$||' | grep -v '^kcm' | sort -u)
     if [[ -n "$avail" ]]; then
       echo "$avail" | grep -qx "$dlib" \
         && ok "$dlib is present on this host" \
@@ -212,7 +212,7 @@ fi
 
 echo "icon theme (a dependency, not shipped here)"
 found=""
-for d in "$DATA/icons/$ICON_THEME" "/usr/share/icons/$ICON_THEME"; do
+for d in "$DATA/icons/$ICON_THEME" "$SYSDATA/icons/$ICON_THEME"; do
   [[ -f "$d/index.theme" ]] && { found="$d"; break; }
 done
 if [[ -n "$found" ]]; then
@@ -243,11 +243,22 @@ if [[ -f "$GTK_DEST/gtk-3.0/gtk.css" ]]; then
   live_gtk=$(grep -m1 '^gtk-theme-name=' "$CONF/gtk-3.0/settings.ini" 2>/dev/null | cut -d= -f2)
   [[ "$live_gtk" == "$ID" ]] && ok "gtk-3.0/settings.ini points at $ID" \
                              || note "gtk-3.0 gtk-theme-name is '${live_gtk:-<unset>}' - run bin/gtk.sh --variant $SLUG"
-  live_pref=$(grep -m1 '^gtk-application-prefer-dark-theme=' "$CONF/gtk-3.0/settings.ini" 2>/dev/null | cut -d= -f2)
-  [[ "$live_pref" == "$GTK_PREFER_DARK" ]] && ok "prefer-dark-theme=$live_pref matches this variant" \
-                                           || note "prefer-dark-theme='${live_pref:-<unset>}', this variant wants $GTK_PREFER_DARK - GTK and Electron apps will look one theme behind"
 else
   note "$ID GTK theme not installed - run bin/gtk.sh --variant $SLUG (optional; Qt apps are unaffected)"
+fi
+
+# Checked whether or not the GTK theme itself is installed: install.sh --apply sets the
+# preference in its fallback branch too, so someone who never ran gtk.sh can still be
+# one theme behind with nothing telling them. This check used to live inside the branch
+# above and so never ran for them.
+live_pref=$(grep -m1 '^gtk-application-prefer-dark-theme=' "$CONF/gtk-3.0/settings.ini" 2>/dev/null | cut -d= -f2)
+if [[ -z "$live_pref" ]]; then
+  note "no gtk-application-prefer-dark-theme set - GTK and portal clients follow their own default"
+elif [[ "$live_pref" == "$GTK_PREFER_DARK" ]]; then
+  ok "prefer-dark-theme=$live_pref matches this variant"
+else
+  note "prefer-dark-theme='$live_pref', this variant wants $GTK_PREFER_DARK - GTK and Electron"
+  note "apps will look one theme behind. Fix: bin/gtk.sh --variant $SLUG, or re-apply."
 fi
 if grep -qs 'applyColorsToNonQtApps=true' "$CONF/kdeglobals"; then
   note "'apply colors to non-Qt applications' is ON - it will overwrite the GTK theme"
@@ -255,7 +266,7 @@ fi
 
 echo "cursors"
 cfound=""
-for d in "$DATA/icons/$CURSOR_THEME" "/usr/share/icons/$CURSOR_THEME"; do
+for d in "$DATA/icons/$CURSOR_THEME" "$SYSDATA/icons/$CURSOR_THEME"; do
   [[ -d "$d/cursors" ]] && { cfound="$d"; break; }
 done
 if [[ -n "$cfound" ]]; then
