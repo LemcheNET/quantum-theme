@@ -615,6 +615,12 @@ tests/run-unit-tests.sh --list   # what there is
 **255 checks across eight suites, no dependencies beyond bash and python3.** No Plasma
 session, no root, and safe to run on a desktop that is currently using the theme.
 
+Verified on a headless Ubuntu 24.04 container — the same base as `ubuntu-latest` — with
+no KDE installed at all: no `plasmashell`, no `kreadconfig6`, no `plasma-apply-*`, no
+`/usr/share/color-schemes`, no `/usr/share/plasma`, no `xdpyinfo`, and no `DISPLAY`.
+255/255 pass there, and again under `env -i` with `PATH=/usr/bin:/bin`, which rules out
+anything leaking in from a developer's environment.
+
 Each suite gets a sandbox: a throwaway `$HOME` with its own XDG directories, a fake
 `/usr/share` seeded with the real Breeze colour values measured on `quantum`, stub KDE
 binaries that record every call, and a private copy of this repo — because `retint.sh`,

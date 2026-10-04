@@ -102,7 +102,22 @@ sandbox_up() {
   unset QUANTUM_VARIANT QUANTUM_VARIANT_OPTIONAL
 }
 
-sandbox_down() { [[ -n "${SANDBOX:-}" && -d "$SANDBOX" ]] && rm -rf "$SANDBOX"; }
+sandbox_down() {
+  [[ -n "${SANDBOX:-}" && -d "$SANDBOX" ]] || return 0
+  # install.sh ends with `(setsid plasmashell &)`, a deliberately detached subshell, so
+  # the stub can append to the call log a moment after the script itself has exited.
+  # That recreates a file under the sandbox while rm is walking it, and rm reports
+  # "Directory not empty". Retry rather than assume the race cannot be lost - on a cold
+  # /tmp it is lost every time.
+  local attempt
+  for attempt in 1 2 3; do
+    rm -rf "$SANDBOX" 2>/dev/null && return 0
+    echo "sandbox teardown retry $attempt" >> "${CALL_LOG:-/dev/null}" 2>/dev/null || true
+    sleep 0.3
+  done
+  rm -rf "$SANDBOX" 2>/dev/null
+  return 0
+}
 
 # A fresh sandbox per test case, so one case cannot leak state into the next.
 sandbox_reset() { sandbox_down; sandbox_up; }
@@ -438,27 +453,29 @@ STUB
 # The exit status goes through a FILE, not a variable: run() is nearly always called in
 # a command substitution, and a variable set inside that subshell never reaches the
 # caller. Read it with status().
-run() {  # script-name, args... -> output on stdout; status() has the exit code
-  local s="$1"; shift
-  local out rc
+# errexit is SAVED and restored, not switched on. An earlier version ended with a bare
+# `set -e`, which turned errexit on for the rest of a suite that had never enabled it -
+# so the first non-zero command anywhere afterwards killed the run. It passed on a warm
+# machine and died on a cold one, which is the exact failure mode a test harness must
+# not have.
+_without_errexit() {  # command... -> output on stdout, status into last_status
+  local out rc had_e=0
+  [[ $- == *e* ]] && had_e=1
   set +e
-  out="$("$QUANTUM_ROOT/bin/$s" "$@" 2>&1)"
+  out="$("$@" 2>&1)"
   rc=$?
-  set -e
+  (( had_e )) && set -e
   printf '%s' "$rc" > "$SANDBOX/last_status"
   printf '%s' "$out"
 }
 
-# Same, for an arbitrary command (a per-variant symlink, say).
-run_cmd() {
-  local out rc
-  set +e
-  out="$("$@" 2>&1)"
-  rc=$?
-  set -e
-  printf '%s' "$rc" > "$SANDBOX/last_status"
-  printf '%s' "$out"
+run() {  # script-name, args... -> output on stdout; status() has the exit code
+  local s="$1"; shift
+  _without_errexit "$QUANTUM_ROOT/bin/$s" "$@"
 }
+
+# Same, for an arbitrary command (a per-variant symlink, say).
+run_cmd() { _without_errexit "$@"; }
 
 status() { cat "$SANDBOX/last_status" 2>/dev/null || echo "<no run recorded>"; }
 
