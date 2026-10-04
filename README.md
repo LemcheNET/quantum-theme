@@ -821,6 +821,22 @@ four in both places: `translucent/` for the blur-on case, top-level for blur-off
 `opacity.sh` retunes both copies, and `verify.sh` fails if the set is incomplete or the
 two copies drift apart.
 
+## Security
+
+[`SECURITY.md`](SECURITY.md) carries the policy. The short version: nothing here runs
+`sudo`, `pkexec` or `systemctl`, nothing is setuid, nothing listens on a port, and
+everything is written under `$XDG_*` — so the realistic worst case is third-party content
+landing in your icon path, not privilege escalation.
+
+Two scripts reach the network, both opt-in and both `git clone`: `bin/icons.sh` fetches
+l4k1's icon theme, and `bin/gtk.sh --rebuild` clones KDE's `breeze-gtk` and runs its
+build script. Neither pins a commit. `SECURITY.md` documents both, along with the ways
+around them, and the static gates fail if a third fetching script appears without the
+policy naming it.
+
+Report privately through the repository's Security tab, or to the address in
+`SECURITY.md`.
+
 ## Licensing and upstream
 
 Per-directory, declared in `REUSE.toml`.

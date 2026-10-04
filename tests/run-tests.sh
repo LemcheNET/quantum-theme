@@ -82,6 +82,38 @@ bad_ver=$(grep -rh '"Version"' variants/*/*/*/metadata.json variants/*/plasma/de
           | grep -v "\"$VER\"" || true)
 [[ -z "$bad_ver" ]] && pass "every package reports $VER" || { fail "a package disagrees with VERSION=$VER:"; echo "$bad_ver" | sed 's/^/        /'; }
 
+head_ "SECURITY.md still describes the real attack surface"
+# The security policy enumerates every script that reaches the network, because those
+# are the two paths where third-party content enters. A third one appearing without the
+# doc changing would make the policy quietly wrong, which is worse than having none.
+if [[ -f SECURITY.md ]]; then
+  mapfile -t fetchers < <(grep -lE '^[^#]*\b(git clone|curl|wget)\b' bin/*.sh | xargs -r -n1 basename | sort)
+  if [[ ${#fetchers[@]} -eq 0 ]]; then
+    pass "no script reaches the network"
+  else
+    undocumented=()
+    for f in "${fetchers[@]}"; do grep -qF "bin/$f" SECURITY.md || undocumented+=("$f"); done
+    [[ ${#undocumented[@]} -eq 0 ]] \
+      && pass "every network-fetching script is named in SECURITY.md (${fetchers[*]})" \
+      || { fail "these reach the network but SECURITY.md does not name them:"; printf '        %s\n' "${undocumented[@]}"; }
+  fi
+  # The headline claim in the policy. Note the shape: `grep -q ... | grep -v` can never
+  # fire, because -q suppresses the output the second grep would read - so the check
+  # would always pass. Capture, then test the capture.
+  priv=$(grep -nE '^[^#]*\b(sudo|pkexec|systemctl)\b' bin/*.sh lib/*.sh 2>/dev/null \
+         | grep -v 'apt install' || true)
+  if [[ -z "$priv" ]]; then
+    pass "nothing executes sudo, pkexec or systemctl, as SECURITY.md claims"
+  else
+    fail "SECURITY.md claims nothing runs sudo/pkexec/systemctl, but these do:"
+    printf '%s\n' "$priv" | sed 's/^/        /'
+  fi
+  grep -qF 'valdemar@lemche.net' SECURITY.md && pass "a reporting address is given" \
+                                             || fail "SECURITY.md gives no way to report"
+else
+  fail "SECURITY.md missing"
+fi
+
 head_ "the store product sheet agrees with the build"
 # packaging/kde-store-products.md names the tarballs and categories by hand. The whole
 # point of this repo is that nothing is typed twice without a check, so the sheet is
