@@ -52,7 +52,7 @@ else
 fi
 
 head_ "variant definitions"
-REQUIRED=(SLUG ID NAME BASE_SCHEME ICON_THEME ICON_SUBDIR CURSOR_THEME PORTAL_PREF GTK_PREFER_DARK)
+REQUIRED=(SLUG ID NAME BASE_SCHEME ICON_THEME ICON_SUBDIR CURSOR_THEME PORTAL_PREF GTK_PREFER_DARK STOCK_LNF)
 for v in "${VARIANTS[@]}"; do
   env="variants/$v/variant.env"
   [[ -f "$env" ]] || { fail "$env missing"; continue; }

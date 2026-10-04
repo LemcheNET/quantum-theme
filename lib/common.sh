@@ -68,7 +68,7 @@ quantum_variant_get() {
 quantum_vdir()        { printf '%s\n' "$QUANTUM_ROOT/variants/$1"; }
 quantum_src_aurorae() { printf '%s\n' "$QUANTUM_ROOT/variants/$1/aurorae/$(quantum_variant_get "$1" ID)"; }
 
-QUANTUM_REQUIRED_KEYS=(SLUG ID NAME BASE_SCHEME ICON_THEME ICON_SUBDIR CURSOR_THEME PORTAL_PREF GTK_PREFER_DARK
+QUANTUM_REQUIRED_KEYS=(SLUG ID NAME BASE_SCHEME ICON_THEME ICON_SUBDIR CURSOR_THEME PORTAL_PREF GTK_PREFER_DARK STOCK_LNF
                        WIDGET_STYLE BUTTONS_LEFT BUTTONS_RIGHT AURORAE_PLUGIN KDECORATION_GROUP)
 
 quantum_init() {

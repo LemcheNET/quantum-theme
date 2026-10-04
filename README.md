@@ -2,7 +2,7 @@
 type: runbook
 subject: Workstation desktop
 artifact: Quantum global themes for KDE Plasma 6
-status: verified — install.sh --apply and verify.sh both run clean for both variants on quantum (Plasma 6.6.6, Kubuntu 26.04) 2026-10-04; offline gates in tests/ pass. Still unexercised: retint.sh, opacity.sh, buttons.sh, whichbg.sh, uninstall.sh, gtk.sh --rebuild, icons.sh
+status: verified for install — install.sh --apply and verify.sh run clean for both variants on quantum (Plasma 6.6.6, Kubuntu 26.04) 2026-10-04; shellcheck and the tests/ gates pass. uninstall.sh was rewritten after that round trip found three defects in its backup replay and now reverts to stock Breeze: UNTESTED in this form. Also unexercised: retint.sh, opacity.sh, buttons.sh, whichbg.sh, gtk.sh --rebuild, icons.sh
 owner: Valdemar Lemche
 concepts: [KDE Plasma, Aurorae, look-and-feel package, Plasma style, window decoration, breeze-gtk]
 tags: [desktop, plasma, theming, kde]
@@ -30,9 +30,10 @@ The two variants are one codebase. Everything that differs between them lives in
 
 **Verified for the install path.** `bin/install.sh --variant <slug> --apply` followed by
 `bin/verify.sh --variant <slug>` runs clean for both variants on `quantum`, Plasma 6.6.6
-on Kubuntu 26.04. Still unexercised in consolidated form: `retint.sh`, `opacity.sh`,
-`buttons.sh`, `whichbg.sh`, `uninstall.sh`, `icons.sh`, and `gtk.sh --rebuild`. Start
-with the read-only `bin/verify.sh`.
+on Kubuntu 26.04. That round trip found three defects in `uninstall.sh`, which has since
+been rewritten to revert to stock Breeze and is **untested in its current form**. Also
+unexercised: `retint.sh`, `opacity.sh`, `buttons.sh`, `whichbg.sh`, `icons.sh`, and
+`gtk.sh --rebuild`. Start with the read-only `bin/verify.sh`.
 
 ## The two variants
 
@@ -465,7 +466,7 @@ having broken.
 quantum-theme/
 ├── VERSION                       one version for every package in every variant
 ├── bin/                          ten scripts, one copy each, --variant <slug>
-│   ├── install.sh  uninstall.sh  verify.sh
+│   ├── install.sh  uninstall.sh  verify.sh      uninstall reverts to stock Breeze
 │   ├── retint.sh   colorscheme.sh  opacity.sh  whichbg.sh
 │   └── icons.sh    gtk.sh          buttons.sh
 ├── lib/common.sh                 variant resolution, paths, output helpers
@@ -531,11 +532,39 @@ cd variants/dark && ./install.sh --apply
 
 `QUANTUM_VARIANT=dark` in the environment works too.
 
-Rollback: `bin/uninstall.sh --variant dark` restores from
-`~/.local/state/quantum-dark/backup-latest.env` — global theme, colour scheme, widget
-style, icons, cursors, Plasma style, decoration, button order and the blur setting — then
-removes that variant's packages (but not the icon theme). Timestamped copies of
-`kdeglobals`, `kwinrc`, `plasmarc` and `kcminputrc` sit alongside it.
+### Rollback
+
+`bin/uninstall.sh --variant dark` reverts to **KDE's own stock global theme** —
+`org.kde.breezedark.desktop` for the dark variant, `org.kde.breeze.desktop` for light,
+resolved against what the host actually has — and then removes that variant's packages.
+The icon theme is left in place.
+
+That is one `plasma-apply-lookandfeel` call, and KDE's package sets its own colour
+scheme, widget style, Plasma style, decoration and cursors from its own
+`contents/defaults`. **Stated plainly: if you had a third-party global theme or a
+hand-built colour scheme before installing this, stock Breeze is not where you were.**
+
+`install.sh --apply` still records eleven appearance keys into
+`~/.local/state/quantum-<slug>/backup-<stamp>.env` before changing anything, alongside
+timestamped copies of `kdeglobals`, `kwinrc`, `plasmarc` and `kcminputrc`. Two ways back:
+
+```bash
+bin/uninstall.sh --variant dark                   # stock Breeze - the default
+bin/uninstall.sh --variant dark --restore-backup  # replay the recorded keys, best-effort
+```
+
+Reverting to stock is the default because replaying the backup is where every rollback
+defect found on `quantum` came from. The backup can name the variant being deleted
+(applying dark while dark is live records `OLD_LNF=QuantumDark`, and restoring that then
+deleting the packages left KWin logging `Could not find decoration svg for
+"QuantumDark"`); it can name something since removed; and with both variants installed
+"what was there before" is ambiguous, since light's backup records dark. Two of the
+eleven keys were also captured and never written back, so an uninstall deleted
+`<ID>.colors` while leaving `kdeglobals` pointing at it.
+
+Copying one of the timestamped config files back is the most reliable rollback available
+— a file copy beats replaying eleven keys — and `--restore-backup` warns that it is
+best-effort before it starts.
 
 Applying from System Settings works too, but if the KCM offers to apply a desktop layout,
 decline it. These packages ship none.

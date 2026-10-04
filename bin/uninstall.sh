@@ -1,28 +1,51 @@
 #!/usr/bin/env bash
-# Rollback. Restores the appearance keys captured by install.sh --apply, then removes
-# this variant's packages.
+# Rollback. Reverts to KDE's own stock global theme, then removes this variant's
+# packages.
 #
-# Usage:  uninstall.sh --variant light [path/to/backup.env]
-# UNTESTED.
+# Usage:  uninstall.sh --variant light
+#         uninstall.sh --variant light --restore-backup [path/to/backup.env]
+#
+# WHY STOCK RATHER THAN "WHAT YOU HAD BEFORE"
+#
+# install.sh --apply records eleven appearance keys before it changes anything, and the
+# first version of this script replayed them. Every rollback defect found on quantum
+# came from that replay:
+#
+#   * The backup can name THIS variant. Applying dark while dark is already live records
+#     OLD_LNF=QuantumDark, so the rollback restored QuantumDark and then deleted its
+#     packages - 'aurorae: Could not find decoration svg for "QuantumDark"'.
+#   * It can name something since removed by hand or by the sibling's uninstall.
+#   * With both variants installed, "what was there before" is ambiguous: light's
+#     backup records dark, so uninstalling light re-applied dark.
+#   * Two keys were captured and never written back at all, leaving kdeglobals pointing
+#     at a .colors file this script had just deleted.
+#
+# Reverting to stock has none of those failure modes. Breeze is present on every Plasma
+# install, KDE's own look-and-feel package sets its own keys correctly, and the outcome
+# is one sentence a stranger can be told in advance.
+#
+# The cost, stated plainly: if you had a third-party global theme or a hand-built colour
+# scheme before installing this, stock Breeze is not where you were. The backup is still
+# written, --restore-backup still replays it, and the timestamped copies of kdeglobals,
+# kwinrc, plasmarc and kcminputrc beside it are the honest escape hatch - a file copy
+# beats replaying eleven keys.
+#
+# UNTESTED in this form.
 set -euo pipefail
 . "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 quantum_init "$@"; set -- "${QUANTUM_ARGS[@]+"${QUANTUM_ARGS[@]}"}"
 
-BAK="${1:-$STATE/backup-latest.env}"
-say "$NAME - rollback"
+MODE=stock
+BAK="$STATE/backup-latest.env"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --restore-backup) MODE=backup; shift ;;
+    -*)               die "unknown argument: $1" ;;
+    *)                BAK="$1"; MODE=backup; shift ;;
+  esac
+done
 
-# A backup records whatever was live when install.sh --apply ran. Two ways that is not
-# safe to replay verbatim:
-#
-#   1. It can name THIS variant. Applying dark twice makes the second backup record
-#      OLD_LNF=QuantumDark, and restoring that then deleting the packages leaves a
-#      global theme pointing at nothing - measured on quantum as
-#      'aurorae: Could not find decoration svg for "QuantumDark"'.
-#   2. It can name something since removed, by hand or by the sibling's uninstall.
-#
-# So every restore is: refuse this variant's own ids, then require that what the value
-# names still exists, then fall back to stock. What it actually did is reported, because
-# a rollback that silently did something else is worse than one that says so.
+say "$NAME - rollback ($MODE)"
 
 lnf_exists() {
   local id="$1" d
@@ -31,122 +54,91 @@ lnf_exists() {
   done
   return 1
 }
-scheme_exists() {
-  local n="$1" d
-  for d in "$DATA/color-schemes/$n.colors" "/usr/share/color-schemes/$n.colors"; do
-    [[ -f "$d" ]] && return 0
+
+# Resolve the stock theme against what the host has rather than trusting an id. Plasma
+# has renamed these before, and a host can be missing the dark counterpart.
+resolve_stock() {
+  local c
+  for c in "$STOCK_LNF" org.kde.breeze.desktop; do
+    [[ "$c" == "$ID" ]] && continue
+    lnf_exists "$c" && { printf '%s\n' "$c"; return 0; }
   done
-  return 1
-}
-style_exists() {
-  local n="$1" d
-  for d in "$DATA/plasma/desktoptheme/$n" "/usr/share/plasma/desktoptheme/$n"; do
-    [[ -d "$d" ]] && return 0
-  done
-  return 1
-}
-icons_exist() {
-  local n="$1" d
-  for d in "$DATA/icons/$n" "/usr/share/icons/$n"; do
-    [[ -f "$d/index.theme" ]] && return 0
-  done
+  # last resort: ask Plasma what it has and take the first Breeze that is not ours
+  if command -v plasma-apply-lookandfeel >/dev/null; then
+    c=$(plasma-apply-lookandfeel --list 2>/dev/null | tr -d ' *' | grep -i '^org\.kde\.breeze' | grep -v "^$ID$" | head -1)
+    [[ -n "$c" ]] && { printf '%s\n' "$c"; return 0; }
+  fi
   return 1
 }
 
-if [[ -f "$BAK" ]]; then
+restore_from_backup() {
+  [[ -f "$BAK" ]] || die "no backup at $BAK (use --variant $SLUG with no flag to revert to stock instead)"
   # shellcheck disable=SC1090
   source "$BAK"
+  warn "replaying a recorded backup is best-effort - see the header of this script"
   say "restoring from $BAK"
 
-  # ---- global theme ----------------------------------------------------------
-  target="${OLD_LNF:-}"
-  if [[ -z "$target" ]]; then
-    say "no previous global theme recorded - falling back to org.kde.breeze.desktop"
-    target=org.kde.breeze.desktop
-  elif [[ "$target" == "$ID" ]]; then
-    warn "the backup names $ID, the theme being removed - falling back to org.kde.breeze.desktop"
-    target=org.kde.breeze.desktop
-  elif ! lnf_exists "$target"; then
-    warn "the recorded global theme $target is no longer installed - falling back to org.kde.breeze.desktop"
-    target=org.kde.breeze.desktop
+  local target="${OLD_LNF:-}"
+  if [[ -z "$target" || "$target" == "$ID" ]] || ! lnf_exists "$target"; then
+    warn "the recorded global theme (${OLD_LNF:-<unset>}) is this variant or is gone - using stock"
+    target="$(resolve_stock)" || die "no stock global theme found on this host"
   fi
   say "global theme -> $target"
   plasma-apply-lookandfeel -a "$target" >/dev/null 2>&1 \
     || warn "plasma-apply-lookandfeel failed for $target - set it in System Settings"
 
-  # Everything below is written AFTER the look-and-feel, which sets several of these
-  # keys itself from its own contents/defaults.
-
-  # ---- colour scheme ---------------------------------------------------------
-  # Backed up since the first version and never restored until now: uninstall deleted
-  # <ID>.colors while leaving kdeglobals pointing at it. Measured on quantum, where
-  # 'colour scheme QuantumLight' survived the removal of that very file.
-  cs="${OLD_COLORSCHEME:-}"
-  if [[ -z "$cs" || "$cs" == "$ID" ]] || ! scheme_exists "$cs"; then
-    [[ "$cs" == "$ID" ]] && warn "the backup's colour scheme is $ID, which is being deleted"
-    cs="$BASE_SCHEME"
+  # Written after the look-and-feel, which sets several of these itself.
+  local cs="${OLD_COLORSCHEME:-}"
+  if [[ -n "$cs" && "$cs" != "$ID" ]]; then
+    say "colour scheme -> $cs"
+    kwriteconfig6 --file kdeglobals --group General --key ColorScheme "$cs"
   fi
-  say "colour scheme -> $cs"
-  kwriteconfig6 --file kdeglobals --group General --key ColorScheme "$cs"
-
-  # ---- widget style ----------------------------------------------------------
-  # Also backed up and never restored.
-  say "widget style -> ${OLD_WIDGETSTYLE:-$WIDGET_STYLE}"
-  kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle "${OLD_WIDGETSTYLE:-$WIDGET_STYLE}"
-
-  # ---- decoration ------------------------------------------------------------
-  deco_theme="${OLD_DECO_THEME:-}"
-  deco_lib="${OLD_DECO_LIBRARY:-}"
-  if [[ -z "$deco_theme" || "$deco_theme" == "__aurorae__svg__$ID" ]]; then
-    [[ "$deco_theme" == "__aurorae__svg__$ID" ]] && warn "the backup's decoration is this theme's - falling back to Breeze"
-    deco_theme=Breeze; deco_lib=org.kde.breeze
-  fi
-  say "decoration -> ${deco_lib:-org.kde.breeze} / $deco_theme"
-  kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library "${deco_lib:-org.kde.breeze}"
-  kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key theme   "$deco_theme"
+  [[ -n "${OLD_WIDGETSTYLE:-}" ]] && {
+    say "widget style -> $OLD_WIDGETSTYLE"
+    kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle "$OLD_WIDGETSTYLE"; }
+  [[ -n "${OLD_ICONS:-}" ]] && kwriteconfig6 --file kdeglobals --group Icons --key Theme "$OLD_ICONS"
   [[ -n "${OLD_BTN_LEFT:-}"  ]] && kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnLeft  "$OLD_BTN_LEFT"
   [[ -n "${OLD_BTN_RIGHT:-}" ]] && kwriteconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnRight "$OLD_BTN_RIGHT"
-
-  # ---- Plasma style ----------------------------------------------------------
-  # Breeze's own Plasma style is called "default", not "Breeze".
-  ps="${OLD_PLASMATHEME:-}"
-  if [[ -z "$ps" || "$ps" == "$ID" ]] || ! style_exists "$ps"; then
-    [[ "$ps" == "$ID" ]] && warn "the backup's Plasma style is $ID, which is being deleted"
-    ps=default
-  fi
-  say "plasma style -> $ps"
-  kwriteconfig6 --file plasmarc --group Theme --key name "$ps"
-
-  # ---- icons -----------------------------------------------------------------
-  # This variant's icon theme is NOT deleted, so naming it is legitimate; only a
-  # genuinely missing theme is replaced.
-  ic="${OLD_ICONS:-}"
-  if [[ -n "$ic" ]] && ! icons_exist "$ic"; then
-    warn "the recorded icon theme $ic is not installed - leaving icons alone"
-    ic=""
-  fi
-  [[ -n "$ic" ]] && { say "icons -> $ic"; kwriteconfig6 --file kdeglobals --group Icons --key Theme "$ic"; }
-
-  # ---- cursors, blur ---------------------------------------------------------
+  [[ -n "${OLD_BLUR:-}" ]] && kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled "$OLD_BLUR"
   if [[ -n "${OLD_CURSOR:-}" ]]; then
     kwriteconfig6 --file kcminputrc --group Mouse --key cursorTheme "$OLD_CURSOR"
     command -v plasma-apply-cursortheme >/dev/null && plasma-apply-cursortheme "$OLD_CURSOR" >/dev/null 2>&1 || true
   fi
-  [[ -n "${OLD_BLUR:-}" ]] && kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled "$OLD_BLUR"
-  if command -v qdbus6 >/dev/null; then qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true; fi
-else
-  say "no backup at $BAK - only removing the packages"
-  say "reset appearance by hand: System Settings -> Colors & Themes -> Global Theme -> Breeze"
-fi
+}
+
+revert_to_stock() {
+  local target
+  target="$(resolve_stock)" || die "no stock Breeze global theme on this host - install the 'breeze' package, or use --restore-backup"
+  say "reverting to KDE's stock global theme: $target"
+  # One command, and the look-and-feel package sets its own colour scheme, widget
+  # style, Plasma style, decoration and cursors from its own contents/defaults. That
+  # is the whole reason this path has no key-by-key replay.
+  plasma-apply-lookandfeel -a "$target" >/dev/null 2>&1 \
+    || die "plasma-apply-lookandfeel failed for $target - set the Global Theme in System Settings, then re-run"
+  # Blur is the one thing install.sh --apply may have turned on that stock Breeze does
+  # not set either way, so leave it as the user has it rather than guessing.
+  say "left alone: KWin blur, panel opacity, cursor size - stock Breeze does not set them"
+}
+
+case "$MODE" in
+  stock)  revert_to_stock ;;
+  backup) restore_from_backup ;;
+esac
+
+if command -v qdbus6 >/dev/null; then qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true; fi
 
 say "removing $ID packages"
 rm -rf "$AURORAE_DEST" "$STYLE_DEST" "$LNF_DEST" "$GTK_DEST"
 rm -f  "$SCHEME_DEST"
 rm -rf "$CACHE"/plasma_theme_*.kcache "$CACHE"/icon-cache.kcache 2>/dev/null || true
-say "note: GTK settings still name $ID; set another theme in"
-say "      System Settings -> Application Style -> GNOME/GTK Application Style"
-say "note: the $ICON_THEME theme itself is left in place."
+
+say "note: the $ICON_THEME icon theme is left in place."
 say "      remove it with: rm -rf \"$DATA/icons/$ICON_THEME\""
+if [[ -d "$STATE" ]]; then
+  say "note: your pre-install settings are still recorded in $STATE -"
+  say "      backup-*.env plus timestamped copies of kdeglobals, kwinrc, plasmarc and"
+  say "      kcminputrc. Copying one of those back is the most reliable rollback there is."
+fi
 command -v kbuildsycoca6 >/dev/null && kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 command -v kquitapp6 >/dev/null && { kquitapp6 plasmashell 2>/dev/null || true; sleep 2; (setsid plasmashell >/dev/null 2>&1 &); }
-say "done"
+say "done. Verify with bin/verify.sh --variant $SLUG (it should now report the packages missing)"
