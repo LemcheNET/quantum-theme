@@ -93,7 +93,11 @@ if [[ -f "$BASE_SCHEME_FILE" ]]; then
     awin=$(awk '/^\[Colors:Window\]/{f=1;next} /^\[/{f=0} f&&/^BackgroundNormal=/{sub(/^BackgroundNormal=/,"");print;exit}' "$active")
     wm=$(awk '/^\[WM\]/{f=1;next} /^\[/{f=0} f&&/^activeBackground=/{sub(/^activeBackground=/,"");print;exit}' "$active")
     printf '  %-30s %s\n' "active scheme (live)" "$live_scheme"
-    if [[ "$live_lnf" == "$ID" ]]; then
+    # Keyed on the live SCHEME, not the live look-and-feel: those can disagree, and
+    # yesterday's version keyed on the look-and-feel and so reported a cheerful
+    # "[Colors:Header] == [Colors:Window] (239,240,241)" while verifying the dark
+    # variant, having examined QuantumLight's scheme.
+    if [[ "$live_scheme" == "$ID" ]]; then
       [[ "$hdr" == "$awin" ]] && ok "[Colors:Header] == [Colors:Window] ($hdr) - app toolbars match the titlebar" \
                               || bad "[Colors:Header]=$hdr != [Colors:Window]=$awin - run bin/colorscheme.sh, then re-apply"
       [[ "$wm" == "$awin" ]]  && ok "[WM] activeBackground == [Colors:Window]" \
@@ -101,8 +105,8 @@ if [[ -f "$BASE_SCHEME_FILE" ]]; then
     else
       # Checking $live_scheme would report a verdict on whichever variant IS applied,
       # which reads as validating this one. Say whose scheme it is instead.
-      note "the live scheme is $live_scheme, not $ID - skipping the Header check, it would"
-      note "be a verdict on that variant rather than this one"
+      note "the live colour scheme is ${live_scheme:-<unset>}, not $ID - skipping the Header"
+      note "check, it would be a verdict on that scheme rather than this variant's"
       [[ "$hdr" == "$awin" ]] && note "  (for the record, $live_scheme does have Header == Window)" \
                               || note "  (for the record, $live_scheme has Header=$hdr != Window=$awin)"
     fi

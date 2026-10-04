@@ -113,17 +113,27 @@ mkdir -p "$STATE"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 BAK="$STATE/backup-$STAMP.env"
 say "backing up current appearance settings to $BAK"
+# Applying a variant that is ALREADY live would otherwise record itself as the thing to
+# roll back to, and uninstall would then restore a theme it is about to delete. The
+# uninstaller guards against this too; recording a sane value is the cheaper half.
+was() {  # key reading command's output, with this variant's own id replaced by a stock one
+  local current="$1" stock="$2"
+  [[ "$current" == "$ID" || "$current" == "__aurorae__svg__$ID" ]] && { printf '%s\n' "$stock"; return; }
+  printf '%s\n' "$current"
+}
 {
   echo "# restore with uninstall.sh, or by hand with kwriteconfig6"
-  echo "OLD_LNF=$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null || true)"
-  echo "OLD_COLORSCHEME=$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null || true)"
+  echo "# values naming $ID were replaced with stock at capture time: applying a variant"
+  echo "# that is already live must not record itself as the rollback target."
+  echo "OLD_LNF=$(was "$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null || true)" org.kde.breeze.desktop)"
+  echo "OLD_COLORSCHEME=$(was "$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null || true)" "$BASE_SCHEME")"
   echo "OLD_WIDGETSTYLE=$(kreadconfig6 --file kdeglobals --group KDE --key widgetStyle 2>/dev/null || true)"
   echo "OLD_ICONS=$(kreadconfig6 --file kdeglobals --group Icons --key Theme 2>/dev/null || true)"
-  echo "OLD_PLASMATHEME=$(kreadconfig6 --file plasmarc --group Theme --key name 2>/dev/null || true)"
+  echo "OLD_PLASMATHEME=$(was "$(kreadconfig6 --file plasmarc --group Theme --key name 2>/dev/null || true)" default)"
   echo "OLD_BLUR=$(kreadconfig6 --file kwinrc --group Plugins --key blurEnabled 2>/dev/null || true)"
   echo "OLD_CURSOR=$(kreadconfig6 --file kcminputrc --group Mouse --key cursorTheme 2>/dev/null || true)"
   echo "OLD_DECO_LIBRARY=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key library 2>/dev/null || true)"
-  echo "OLD_DECO_THEME=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key theme 2>/dev/null || true)"
+  echo "OLD_DECO_THEME=$(was "$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key theme 2>/dev/null || true)" Breeze)"
   echo "OLD_BTN_LEFT=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnLeft 2>/dev/null || true)"
   echo "OLD_BTN_RIGHT=$(kreadconfig6 --file kwinrc --group "$KDECORATION_GROUP" --key ButtonsOnRight 2>/dev/null || true)"
 } > "$BAK"
