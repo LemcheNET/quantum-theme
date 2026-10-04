@@ -17,6 +17,13 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
           pipx install reuse
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: both linters must actually be on PATH
+        # tests/run-tests.sh treats a missing linter as a skip, so a silent install
+        # failure would pass CI without linting anything. Fail loudly instead.
+        run: |
+          command -v shellcheck
+          command -v reuse
       - name: tests/run-tests.sh
         run: ./tests/run-tests.sh
 
@@ -24,6 +31,8 @@ jobs:
     needs: checks
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # creating the release; default GITHUB_TOKEN is read-only
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,7 +42,12 @@ jobs:
           tag="${GITHUB_REF_NAME#v}"
           ver="$(cat VERSION)"
           [[ "$tag" == "$ver" ]] || { echo "tag $tag != VERSION $ver"; exit 1; }
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+      - name: linters, same as the checks job
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          pipx install reuse
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: ./packaging/make-release.sh
       - uses: softprops/action-gh-release@v2
         with:
