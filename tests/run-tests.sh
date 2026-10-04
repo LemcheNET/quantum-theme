@@ -192,7 +192,16 @@ for v in "${VARIANTS[@]}"; do
                                              || fail "variants/$v/aurorae/$id/LICENSE missing - required when redistributing Moe"
 done
 if command -v reuse >/dev/null; then
-  reuse lint -q && pass "reuse lint" || { fail "reuse lint"; reuse lint | tail -20 | sed 's/^/        /'; }
+  # On failure show the findings, not the summary: reuse prints the offending files
+  # first and the statistics last, and an earlier `tail -20` kept exactly the half
+  # that does not say which files are wrong.
+  if reuse lint -q; then
+    pass "reuse lint"
+  else
+    fail "reuse lint - these files carry no licence or copyright:"
+    reuse lint 2>&1 | sed -n '/^# MISSING/,/^# SUMMARY/p' | grep -E '^\* ' | sed 's/^/        /'
+    echo "        fix: add the path to an [[annotations]] block in REUSE.toml"
+  fi
 else
   echo "  --    reuse not installed; skipped (pipx install reuse)"
 fi

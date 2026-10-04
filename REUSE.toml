@@ -34,7 +34,7 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 
 # Everything else: the scripts, the look-and-feel packaging, the docs.
 [[annotations]]
-path = ["bin/**", "lib/**", "packaging/**", "tests/**", "variants/*/look-and-feel/*/metadata.json", "variants/*/look-and-feel/*/contents/defaults", "variants/*/variant.env", "*.sh", "*.md", "VERSION", ".gitignore", "REUSE.toml", ".github/**"]
+path = ["bin/**", "lib/**", "packaging/**", "tests/**", "variants/*/look-and-feel/*/metadata.json", "variants/*/look-and-feel/*/contents/defaults", "variants/*/variant.env", "theme.env", "*.sh", "*.md", "VERSION", ".gitignore", "REUSE.toml", ".github/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Valdemar Lemche <valdemar@lemche.net>"
 SPDX-License-Identifier = "GPL-3.0-or-later"

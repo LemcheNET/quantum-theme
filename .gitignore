@@ -4,3 +4,5 @@
 *.orig
 *.rej
 .whichbg-active
+# personal editor settings
+/.vscode/
