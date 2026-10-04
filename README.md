@@ -698,6 +698,13 @@ Upload is manual — `store.kde.org/product/add`, one product per category. Ther
 supported publish API for third parties, so the GitHub release is the automated half and
 the store pages are updated by hand.
 
+**[`packaging/kde-store-products.md`](packaging/kde-store-products.md)** holds the
+filled-in definition for all three products: category, title, summary, version, licence,
+tags, which files go where, the description and attribution text ready to paste, the
+changelog, and a per-release checklist. The static gates check its filenames, categories
+and version against what `make-release.sh` actually emits, so it cannot drift from the
+build.
+
 ## Known rough edges
 
 - **Plasma 6.6 ignores button positions from global themes**

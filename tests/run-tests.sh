@@ -82,6 +82,30 @@ bad_ver=$(grep -rh '"Version"' variants/*/*/*/metadata.json variants/*/plasma/de
           | grep -v "\"$VER\"" || true)
 [[ -z "$bad_ver" ]] && pass "every package reports $VER" || { fail "a package disagrees with VERSION=$VER:"; echo "$bad_ver" | sed 's/^/        /'; }
 
+head_ "the store product sheet agrees with the build"
+# packaging/kde-store-products.md names the tarballs and categories by hand. The whole
+# point of this repo is that nothing is typed twice without a check, so the sheet is
+# gated against what make-release.sh actually emits.
+SHEET=packaging/kde-store-products.md
+if [[ -f "$SHEET" ]]; then
+  sheet_names=$(grep -oE 'Quantum(Light|Dark)-[a-z]+-[0-9.]+\.tar\.gz' "$SHEET" | sort -u)
+  build_names=$(./packaging/make-release.sh --list | grep -oE 'Quantum(Light|Dark)-[a-z]+-[0-9.]+\.tar\.gz' | sort -u)
+  if [[ "$sheet_names" == "$build_names" ]]; then
+    pass "every tarball the sheet names is one the build produces"
+  else
+    fail "the sheet and the build disagree about filenames:"
+    diff <(echo "$build_names") <(echo "$sheet_names") | sed 's/^/        /'
+  fi
+  stale=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' "$SHEET" | sort -u | grep -v "^$VER$" || true)
+  [[ -z "$stale" ]] && pass "the sheet quotes no version other than $VER" \
+                    || { fail "the sheet quotes a stale version:"; echo "$stale" | sed 's/^/        /'; }
+  for c in 'Global Themes (Plasma 6)' 'Plasma 6 Window Decorations' 'Plasma 6 Themes'; do
+    grep -qF "$c" "$SHEET" && pass "names the $c category" || fail "the sheet is missing the $c category"
+  done
+else
+  fail "$SHEET missing - the store upload has no definition"
+fi
+
 head_ "variant tree parity"
 # The forked packages lost files from one side without anyone noticing. Compare the
 # relative shape of each tree, with the id substituted out.
