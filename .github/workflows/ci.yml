@@ -57,10 +57,14 @@ jobs:
         with:
           fetch-depth: 0
       - name: the tag must match VERSION
+        id: version
         run: |
           tag="${GITHUB_REF_NAME#v}"
           ver="$(cat VERSION)"
           [[ "$tag" == "$ver" ]] || { echo "tag $tag != VERSION $ver"; exit 1; }
+          # The release notes need the bare version: the tag is v2.1.1 but the
+          # tarball is quantum-theme-2.1.1.tar.gz.
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
       - name: linters, same as the static job
         run: |
           sudo apt-get update -qq
@@ -76,7 +80,7 @@ jobs:
             dist/*.tar.gz
             dist/SHA256SUMS
           body: |
-            Install from `quantum-theme-${{ github.ref_name }}.tar.gz`:
+            Install from `quantum-theme-${{ steps.version.outputs.version }}.tar.gz`:
 
                 tar xzf quantum-theme-*.tar.gz && cd quantum-theme-*
                 bin/icons.sh   --variant dark
