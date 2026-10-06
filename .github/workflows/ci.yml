@@ -24,15 +24,16 @@ jobs:
       - name: install the linters the suite uses when present
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq shellcheck
+          sudo apt-get install -y -qq shellcheck python3-numpy python3-pil
           pipx install reuse
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: both linters must actually be on PATH
+      - name: every checker the suite can skip must actually be present
         # tests/run-tests.sh treats a missing linter as a skip, so a silent install
         # failure would pass CI without linting anything. Fail loudly instead.
         run: |
           command -v shellcheck
           command -v reuse
+          python3 -c 'import numpy, PIL'   # the boot-background drift check needs both
       - run: ./tests/run-tests.sh --static-only
 
   unit:
@@ -68,7 +69,7 @@ jobs:
       - name: linters, same as the static job
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq shellcheck
+          sudo apt-get install -y -qq shellcheck python3-numpy python3-pil
           pipx install reuse
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       # make-release.sh runs tests/run-tests.sh itself, so the full suite - static

@@ -1,0 +1,98 @@
+// ==============================================================================
+// Quantum - Plymouth boot theme (script module)
+// Source: plymouth/theme/quantum.script
+// Status: verified on the author's workstation 2026-09-24 (preview + two reboots,
+//         three displays), as 'sovereign-boot', its pre-publication name. The script is unchanged since.
+//
+// What it draws:
+//  - A full-screen wallpaper, scaled to COVER the screen (aspect kept, excess
+//    cropped equally from both sides). Two variants ship in the theme dir:
+//    background-wide.png (21:9) for screens wider than 2:1, and
+//    background-16x9.png otherwise, so art composed for one aspect is not
+//    cropped badly on the other.
+//  - A rotating activity spinner (wheel.png, one frame, rotated each tick)
+//    at the bottom centre.
+//
+// Design notes:
+//  - No resolution is hardcoded. Everything scales off Window.GetWidth()/
+//    GetHeight(), i.e. whatever mode the amdgpu KMS driver gave Plymouth.
+//  - The spinner runs at a constant speed. It is an "alive" indicator, not a
+//    progress bar: boot-progress estimates are too noisy to drive it.
+//  - Esc to show the boot log is handled by plymouthd itself (it swaps to its
+//    built-in details view). No script hook exists or is needed.
+//  - Single display assumed. With several heads, sprites are placed using the
+//    first display's geometry.
+// ==============================================================================
+
+// ---- Tunables ----------------------------------------------------------------
+SPINNER_Y     = 0.935;   // spinner centre, fraction of screen height
+SPINNER_SIZE  = 0.045;   // spinner diameter, fraction of screen height
+SPIN_SPEED    = 0.10;    // radians per refresh tick (~50 Hz). Negate if the tail leads.
+BG_FADE_STEP  = 0.04;    // wallpaper fade-in per tick (~0.5 s)
+WHEEL_FADE    = 0.05;    // spinner fade-in per tick, starts after the wallpaper
+TWO_PI        = 6.2831853;
+
+// Pure black, to match the wallpaper edges and the firmware hand-off.
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+screen_w = Window.GetWidth();
+screen_h = Window.GetHeight();
+
+// ---- Wallpaper ---------------------------------------------------------------
+if (screen_w / screen_h > 2.0) {
+    bg_image = Image("background-wide.png");
+} else {
+    bg_image = Image("background-16x9.png");
+}
+
+// Cover: the larger of the two scale factors (written out rather than
+// relying on Math.Max, to keep the builtin surface minimal).
+bg_scale = screen_w / bg_image.GetWidth();
+if (screen_h / bg_image.GetHeight() > bg_scale) {
+    bg_scale = screen_h / bg_image.GetHeight();
+}
+bg_w = bg_image.GetWidth()  * bg_scale;
+bg_h = bg_image.GetHeight() * bg_scale;
+
+bg.sprite = Sprite(bg_image.Scale(bg_w, bg_h));
+bg.sprite.SetX((screen_w - bg_w) / 2);   // negative when cropping: centres the art
+bg.sprite.SetY((screen_h - bg_h) / 2);
+bg.sprite.SetZ(-100);
+bg.sprite.SetOpacity(0);
+
+// ---- Spinner -----------------------------------------------------------------
+wheel_d = screen_h * SPINNER_SIZE;
+wheel_image = Image("wheel.png").Scale(wheel_d, wheel_d);
+
+wheel.sprite = Sprite(wheel_image);
+wheel.sprite.SetX((screen_w - wheel_d) / 2);
+wheel.sprite.SetY(screen_h * SPINNER_Y - wheel_d / 2);
+wheel.sprite.SetZ(10);
+wheel.sprite.SetOpacity(0);
+
+// ---- Animation ---------------------------------------------------------------
+bg_opacity = 0;
+wheel_opacity = 0;
+spin_angle = 0;
+
+fun refresh_callback () {
+    if (bg_opacity < 1) {
+        bg_opacity += BG_FADE_STEP;
+        if (bg_opacity > 1) { bg_opacity = 1; }
+        bg.sprite.SetOpacity(bg_opacity);
+    } else if (wheel_opacity < 1) {
+        wheel_opacity += WHEEL_FADE;
+        if (wheel_opacity > 1) { wheel_opacity = 1; }
+        wheel.sprite.SetOpacity(wheel_opacity);
+    }
+
+    // Rotate() returns an image of the same size, rotated about its centre,
+    // so the sprite position never needs to change.
+    spin_angle += SPIN_SPEED;
+    if (spin_angle > TWO_PI) { spin_angle -= TWO_PI; }
+    if (spin_angle < 0) { spin_angle += TWO_PI; }
+    wheel.sprite.SetImage(wheel_image.Rotate(spin_angle));
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);

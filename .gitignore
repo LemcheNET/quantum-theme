@@ -6,3 +6,5 @@
 .whichbg-active
 # personal editor settings
 /.vscode/
+# Python bytecode
+__pycache__/

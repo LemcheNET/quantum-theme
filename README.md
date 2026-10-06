@@ -497,6 +497,7 @@ quantum-theme/
 ├── packaging/
 │   ├── stamp-metadata.py         generates every metadata/defaults file; --check in CI
 │   └── make-release.sh           builds the store tarballs and the source tarball
+├── plymouth/                     OPTIONAL boot splash - runs as root, see plymouth/README.md
 ├── tests/
 │   ├── run-tests.sh              static gates, then the unit suites
 │   ├── run-unit-tests.sh         the unit suites alone
@@ -823,12 +824,35 @@ four in both places: `translucent/` for the blur-on case, top-level for blur-off
 `opacity.sh` retunes both copies, and `verify.sh` fails if the set is incomplete or the
 two copies drift apart.
 
+## Boot splash (optional)
+
+[`plymouth/`](plymouth/README.md) adds a Plymouth boot theme to go with the desktop: a
+dark background in the Quantum palette that fades in, an activity spinner, and
+optionally the same art behind the GRUB menu.
+
+**It is the one part of this repository that runs as root**, because the splash is
+drawn from the initramfs before any user exists: it edits `/etc/default/grub` and
+`plymouthd.conf` and rebuilds the initramfs for every kernel. It targets the
+Debian/Ubuntu family (initramfs-tools and GRUB). Nothing else here depends on it, and
+every script in it takes `--dry-run`.
+
+```bash
+sudo bash plymouth/install.sh --dry-run    # read the plan first
+```
+
+The default backgrounds are generated, original artwork. To use your own art, convert it
+with `plymouth/build/prepare_backgrounds.py` and pass `--backgrounds DIR`; that keeps
+images whose licence you cannot pass on out of the repository.
+
 ## Security
 
-[`SECURITY.md`](SECURITY.md) carries the policy. The short version: nothing here runs
+[`SECURITY.md`](SECURITY.md) carries the policy. The short version, for the desktop themes: nothing there runs
 `sudo`, `pkexec` or `systemctl`, nothing is setuid, nothing listens on a port, and
 everything is written under `$XDG_*` — so the realistic worst case is third-party content
 landing in your icon path, not privilege escalation.
+
+`plymouth/` is the exception: it runs as root and edits boot configuration, and the
+static gates fail if a root-level operation appears anywhere outside it.
 
 Two scripts reach the network, both opt-in and both `git clone`: `bin/icons.sh` fetches
 l4k1's icon theme, and `bin/gtk.sh --rebuild` clones KDE's `breeze-gtk` and runs its

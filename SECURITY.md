@@ -2,12 +2,17 @@
 
 ## What this project is, in security terms
 
-A set of Plasma 6 theme packages — SVG artwork, config files, a prebuilt GTK theme — plus
-ten shell scripts that copy them into place and set appearance keys.
+Two components with different trust levels. Keep them apart in your head, because the
+second one is optional and nothing in the first depends on it.
 
-- **No privileged code.** Nothing here runs `sudo`, `pkexec` or `systemctl`. The only
-  mentions of `sudo` are in messages telling *you* to install a distribution package.
-  Nothing is setuid, and no systemd unit is installed.
+### The desktop themes — `bin/`, `lib/`, `variants/`
+
+SVG artwork, config files, a prebuilt GTK theme, and ten shell scripts that copy them
+into place and set appearance keys.
+
+- **No privileged code.** Nothing here runs as root or calls `sudo`, `pkexec` or
+  `systemctl`. The only mentions of `sudo` are in messages telling *you* to install a
+  distribution package. Nothing is setuid, and no systemd unit is installed.
 - **No daemon and no listener.** Nothing runs in the background, nothing binds a port.
 - **Per-user scope.** Everything is written under `$XDG_DATA_HOME`, `$XDG_CONFIG_HOME`,
   `$XDG_CACHE_HOME` and `$XDG_STATE_HOME` (by default `~/.local/share`, `~/.config`,
@@ -15,9 +20,31 @@ ten shell scripts that copy them into place and set appearance keys.
 - **Two network paths**, both `git clone`, both opt-in. They are listed under
   *Known and accepted risks* below.
 
-So the realistic worst case is not privilege escalation. It is code or content from a
-third party landing in your icon or theme path, or a delete aimed somewhere unintended.
-Both are covered below.
+The realistic worst case here is not privilege escalation. It is third-party content
+landing in your icon or theme path, or a delete aimed somewhere unintended.
+
+### The Plymouth boot theme — `plymouth/` (optional, **runs as root**)
+
+A boot splash. It has to be installed system-wide, because the splash is drawn from the
+initramfs before any user exists, so these scripts are run with `sudo` and they:
+
+- write `/usr/share/plymouth/themes/<name>/`
+- edit `/etc/plymouth/plymouthd.conf` (`Theme=`) and the `default.plymouth` alternative
+- edit `/etc/default/grub` (`GRUB_GFXMODE`, `GRUB_GFXPAYLOAD_LINUX`, optionally
+  `GRUB_BACKGROUND` and `GRUB_CMDLINE_LINUX_DEFAULT`) and copy an image to
+  `/boot/grub/`
+- run `update-grub` and rebuild the initramfs for **every** installed kernel
+- only if `prepare-boot-graphics.sh --apply` is run: append the display driver to
+  `/etc/initramfs-tools/modules` and write one file under
+  `/etc/initramfs-tools/conf.d/`
+
+None of it reaches the network. State and rollback records live in
+`/var/lib/quantum-plymouth/` (directory 0700, records 0600). The static gates fail if a
+root-level operation ever appears outside `plymouth/`, so the per-user guarantee above
+stays enforced rather than asserted.
+
+The worst case here is different in kind: **a mistake affects booting, not only how the
+desktop looks.** See risk 5 below.
 
 ## Supported versions
 
@@ -63,6 +90,9 @@ disagree in public. Credit in the release notes if you want it.
   `~/.local/state/quantum-*/`. Nothing here should ever handle one.
 - Anything that makes `uninstall.sh` fail to remove what it installed, or remove what it
   did not.
+- For `plymouth/`: any write outside the paths listed above, a rollback record that
+  restores the wrong state, or a way for an unprivileged user to influence what the
+  root scripts write - through a path, a file in the checkout, or the environment.
 
 **Out of scope**
 
@@ -129,6 +159,26 @@ corrupted; they do not prove who built it.
 **If that matters to you:** build from a tag yourself — `packaging/make-release.sh`
 produces byte-identical artifacts.
 
+### 5. `plymouth/` edits the bootloader configuration and rebuilds every initramfs
+
+A wrong GRUB key, a failed initramfs rebuild or a broken theme does not make the
+machine unbootable in the usual case — the kernel and the system still start, and a
+missing splash falls back to text — but it is boot-path configuration, edited as root,
+and that deserves more caution than anything else here.
+
+**Mitigations in place:** every run copies `/etc/default/grub` and `plymouthd.conf` to
+a timestamped snapshot first; `--dry-run` prints every key and file it would change; the
+first install records the original values, and the installer refuses to start if that
+record would name the theme being installed; after rebuilding, it checks that the theme
+is inside every initrd and exits non-zero, telling you not to reboot, if it is not.
+
+**Not yet verified:** `plymouth/uninstall.sh` has only ever been run with `--dry-run`.
+The renamed, driver-aware version of the whole component has not run on hardware. Keep
+the snapshots in `/var/lib/quantum-plymouth/backups/` until you have rebooted once
+after any change.
+
+**If you would rather not:** skip `plymouth/` entirely. Nothing else depends on it.
+
 ## Hardening, if you want it
 
 - `bin/verify.sh` is read-only. Run it first, and after anything else.
@@ -141,3 +191,5 @@ produces byte-identical artifacts.
   packages.
 - Nothing here needs network access except the two scripts named above. Running the rest
   offline is fine.
+- `plymouth/` is the only part that needs root, and it is optional. Every script there
+  takes `--dry-run`; read that plan before running it for real.

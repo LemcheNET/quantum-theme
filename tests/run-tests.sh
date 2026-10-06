@@ -22,7 +22,7 @@ pass() { printf '  \033[1;32mok\033[0m    %s\n' "$*"; }
 fail() { printf '  \033[1;31mFAIL\033[0m  %s\n' "$*"; fails=$((fails+1)); }
 head_() { printf '\033[1m%s\033[0m\n' "$*"; }
 
-mapfile -t SCRIPTS < <(find bin lib tests -name '*.sh' -type f | sort; ls ./*.sh 2>/dev/null)
+mapfile -t SCRIPTS < <(find bin lib tests plymouth -name '*.sh' -type f | sort; ls ./*.sh 2>/dev/null)
 mapfile -t VARIANTS < <(find variants -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
 
 head_ "shell syntax"
@@ -87,7 +87,7 @@ head_ "SECURITY.md still describes the real attack surface"
 # are the two paths where third-party content enters. A third one appearing without the
 # doc changing would make the policy quietly wrong, which is worse than having none.
 if [[ -f SECURITY.md ]]; then
-  mapfile -t fetchers < <(grep -lE '^[^#]*\b(git clone|curl|wget)\b' bin/*.sh | xargs -r -n1 basename | sort)
+  mapfile -t fetchers < <(grep -lE '^[^#]*\b(git clone|curl|wget)\b' bin/*.sh plymouth/*.sh | xargs -r -n1 basename | sort)
   if [[ ${#fetchers[@]} -eq 0 ]]; then
     pass "no script reaches the network"
   else
@@ -108,10 +108,63 @@ if [[ -f SECURITY.md ]]; then
     fail "SECURITY.md claims nothing runs sudo/pkexec/systemctl, but these do:"
     printf '%s\n' "$priv" | sed 's/^/        /'
   fi
+  # The repository has exactly one root-level component, plymouth/. Everything else
+  # must stay user-level, and the policy must say where the line is. Without this, a
+  # root operation could land in bin/ while the "no system path is touched" claim
+  # stayed green - the plymouth scripts never call sudo themselves, they are RUN with
+  # it, so the sudo check above cannot see them.
+  rootops=$(grep -nE '^[^#]*(update-grub|update-initramfs|update-alternatives|/etc/default/grub|plymouthd\.conf|require_root|/boot/)' \
+            bin/*.sh lib/*.sh ./*.sh 2>/dev/null || true)
+  if [[ -z "$rootops" ]]; then
+    pass "root operations live only under plymouth/"
+  else
+    fail "root operations outside plymouth/:"; printf '%s\n' "$rootops" | sed 's/^/        /'
+  fi
+  grep -qF 'plymouth/' SECURITY.md && pass "SECURITY.md names plymouth/ as the root component" \
+                                   || fail "SECURITY.md does not describe the root component plymouth/"
   grep -qF 'valdemar@lemche.net' SECURITY.md && pass "a reporting address is given" \
                                              || fail "SECURITY.md gives no way to report"
 else
   fail "SECURITY.md missing"
+fi
+
+head_ "Plymouth build scripts"
+# Parse only. py_compile writes __pycache__ into the checkout, and a check that leaves
+# files in the working tree is one `git add -A` away from committing them.
+for f in plymouth/build/*.py; do
+  python3 -I -c 'import ast, sys; ast.parse(open(sys.argv[1]).read(), sys.argv[1])' "$f" 2>/dev/null \
+    && pass "$f parses" || fail "$f does not parse"
+done
+
+head_ "the default boot backgrounds match their generator"
+# The backgrounds are generated art; the generator is their source, in the GPL sense of
+# the preferred form for modification. Regenerate and compare, so a hand-edited PNG or
+# a changed constant without a regeneration cannot ship. Compared with a tolerance of
+# one level rather than byte-for-byte: float32 exp/sqrt can differ by an ulp between
+# CPU instruction sets, which moves a few pixels across a rounding boundary.
+if python3 -c 'import numpy, PIL' 2>/dev/null; then
+  BGTMP="$(mktemp -d)"
+  python3 plymouth/build/generate_backgrounds.py --out-dir "$BGTMP" >/dev/null
+  for f in background-wide.png background-16x9.png; do
+    verdict=$(python3 - "plymouth/theme/$f" "$BGTMP/$f" <<'PYCMP'
+import sys
+import numpy as np
+from PIL import Image
+a = np.asarray(Image.open(sys.argv[1]).convert("RGB"), dtype=np.int16)
+b = np.asarray(Image.open(sys.argv[2]).convert("RGB"), dtype=np.int16)
+if a.shape != b.shape:
+    print(f"size {a.shape[1]}x{a.shape[0]} vs regenerated {b.shape[1]}x{b.shape[0]}")
+else:
+    d = np.abs(a - b)
+    print("ok" if d.max() <= 1 else f"differs by up to {d.max()} levels in {(d > 1).any(axis=2).sum()} pixels")
+PYCMP
+)
+    [[ "$verdict" == ok ]] && pass "plymouth/theme/$f matches the generator" \
+                           || fail "plymouth/theme/$f: $verdict - run plymouth/build/generate_backgrounds.py"
+  done
+  rm -rf "$BGTMP"
+else
+  echo "  --    numpy or Pillow not installed; skipped (apt install python3-numpy python3-pil)"
 fi
 
 head_ "the store product sheet agrees with the build"

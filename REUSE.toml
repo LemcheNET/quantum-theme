@@ -32,6 +32,16 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Valdemar Lemche <valdemar@lemche.net>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
+# The Plymouth boot theme. All of it is original: the scripts, the splash script, and
+# three generated images (the backgrounds and the spinner), whose generators are in
+# plymouth/build/. Third-party wallpaper is deliberately not in this repository;
+# install.sh --backgrounds points at your own instead.
+[[annotations]]
+path = ["plymouth/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Valdemar Lemche <valdemar@lemche.net>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
 # Everything else: the scripts, the look-and-feel packaging, the docs.
 [[annotations]]
 path = ["bin/**", "lib/**", "packaging/**", "tests/**", "variants/*/look-and-feel/*/metadata.json", "variants/*/look-and-feel/*/contents/defaults", "variants/*/variant.env", "theme.env", "*.sh", "*.md", "VERSION", ".gitignore", "REUSE.toml", ".github/**"]
