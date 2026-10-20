@@ -250,6 +250,41 @@ The portal value is authoritative: `1` means prefer-dark, `2` means prefer-light
   "apply colors to non-Qt applications", or it regenerates GTK colours from the active
   scheme and overwrites this. Upstream `breeze-gtk`'s own README says the same.
 
+### Following the day/night cycle
+
+Plasma's automatic light/dark switch updates the portal preference (`color-scheme`) but
+not the GTK theme *name*. GTK4 apps follow the preference live; **GTK3 apps ignore it and
+only react live to a change of `gtk-theme`**, so they stay on the old variant until
+restarted. If `gsettings get org.gnome.desktop.interface color-scheme` says one variant
+and `gtk-theme` says the other, that is what you are seeing.
+
+`bin/gtk-follow.sh` closes the gap. It sets `gtk-theme` to whichever variant declares the
+current `color-scheme` as its `PORTAL_PREF` (read from `variants/<slug>/variant.env`), and
+keeps any existing `settings.ini`, `~/.gtkrc-2.0` and `xsettingsd` entries current.
+
+```bash
+bin/gtk-follow.sh --check     # live vs expected; changes nothing, exit 1 if they differ
+bin/gtk-follow.sh --once      # apply now and exit
+bin/gtk-follow.sh             # apply, then watch color-scheme and re-apply on every change
+```
+
+It needs both variants' GTK themes installed (`bin/gtk.sh --variant light` and
+`--variant dark`); if the one it wants is missing it warns and does nothing, rather than
+let GTK fall back to Adwaita.
+
+To run it for the whole session, install the optional **user** unit:
+
+```bash
+bin/gtk-follow.sh --install-service     # writes ~/.config/systemd/user/, enables and starts it
+bin/gtk-follow.sh --uninstall-service   # stops it and removes the file
+```
+
+It uses `systemctl --user` only, never the system manager, and nothing else in this
+repository installs it. The unit is generated from `systemd/quantum-gtk-follow.service`
+and points at this checkout, so re-run `--install-service` if you move it. Already-running
+GTK3 apps pick the change up live; there is nothing to restart. Logs:
+`journalctl --user -u quantum-gtk-follow`.
+
 ## Button size
 
 Already customizable, and not by anything this theme added — Aurorae supports it and
@@ -467,10 +502,11 @@ having broken.
 ```
 quantum-theme/
 ├── VERSION                       one version for every package in every variant
-├── bin/                          ten scripts, one copy each, --variant <slug>
+├── bin/                          eleven scripts, one copy each, --variant <slug>
 │   ├── install.sh  uninstall.sh  verify.sh      uninstall reverts to stock Breeze
 │   ├── retint.sh   colorscheme.sh  opacity.sh  whichbg.sh
-│   └── icons.sh    gtk.sh          buttons.sh
+│   └── icons.sh    gtk.sh          buttons.sh      gtk-follow.sh (optional watcher)
+├── systemd/                      unit template for gtk-follow.sh --install-service
 ├── lib/common.sh                 variant resolution, paths, output helpers
 ├── variants/
 │   ├── light/
@@ -615,13 +651,13 @@ tests/run-unit-tests.sh uninstall    # one suite by name
 tests/run-unit-tests.sh --list   # what there is
 ```
 
-**255 checks across eight suites, no dependencies beyond bash and python3.** No Plasma
+**292 checks across nine suites, no dependencies beyond bash and python3.** No Plasma
 session, no root, and safe to run on a desktop that is currently using the theme.
 
 Verified on a headless Ubuntu 24.04 container — the same base as `ubuntu-latest` — with
 no KDE installed at all: no `plasmashell`, no `kreadconfig6`, no `plasma-apply-*`, no
 `/usr/share/color-schemes`, no `/usr/share/plasma`, no `xdpyinfo`, and no `DISPLAY`.
-255/255 pass there, and again under `env -i` with `PATH=/usr/bin:/bin`, which rules out
+The first 255 passed there, and again under `env -i` with `PATH=/usr/bin:/bin`, which rules out
 anything leaking in from a developer's environment.
 
 Each suite gets a sandbox: a throwaway `$HOME` with its own XDG directories, a fake
@@ -646,6 +682,7 @@ the real data files rather than asserting that a command was called.
 | `install` | all three packages, the icon-theme refusal, the Plasma 6 gate, the applied state, the portal preference per variant, and that the backup never names the variant being installed |
 | `uninstall` | reverting to the variant's stock theme, the fallback chain, the sibling surviving, `--restore-backup` refusing a self-referential backup, and a double round trip leaving no residue |
 | `verify` | that a clean install has no failures, and that each verdict is about the right variant |
+| `gtk_follow` | the preference-to-variant mapping, that no-op paths write nothing, that a missing theme is never selected, existing settings files kept current but never created, `--check` exit codes, and the watch loop re-applying on change |
 
 Several cases exist because the behaviour was once wrong on a live host, and those are
 marked as such in the test files. The uninstall suite in particular encodes the three
@@ -847,7 +884,8 @@ images whose licence you cannot pass on out of the repository.
 ## Security
 
 [`SECURITY.md`](SECURITY.md) carries the policy. The short version, for the desktop themes: nothing there runs
-`sudo`, `pkexec` or `systemctl`, nothing is setuid, nothing listens on a port, and
+`sudo` or `pkexec`, `systemctl` is used only as `systemctl --user` by the opt-in
+`bin/gtk-follow.sh --install-service`, nothing is setuid, nothing listens on a port, and
 everything is written under `$XDG_*` — so the realistic worst case is third-party content
 landing in your icon path, not privilege escalation.
 

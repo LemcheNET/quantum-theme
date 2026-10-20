@@ -1,0 +1,22 @@
+# Optional. Keeps the GTK theme in step with Plasma's light/dark switch, so GTK3 apps
+# change live instead of staying on the old variant until restarted.
+#
+# This file is a template: @QUANTUM_ROOT@ is replaced with the path of this checkout.
+# Install it with `bin/gtk-follow.sh --install-service` (and remove it with
+# `--uninstall-service`); nothing else in the repository installs or enables it.
+
+[Unit]
+Description=Keep the GTK theme in step with the desktop light/dark preference
+Documentation=https://github.com/LemcheNET/quantum-theme#following-the-daynight-cycle
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=@QUANTUM_ROOT@/bin/gtk-follow.sh --watch
+# The watcher exits non-zero if gsettings monitor dies, and zero never; restart either way.
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

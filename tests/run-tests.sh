@@ -100,12 +100,17 @@ if [[ -f SECURITY.md ]]; then
   # The headline claim in the policy. Note the shape: `grep -q ... | grep -v` can never
   # fire, because -q suppresses the output the second grep would read - so the check
   # would always pass. Capture, then test the capture.
+  # systemctl has exactly one permitted home: bin/gtk-follow.sh, whose --install-service
+  # and --uninstall-service manage the optional per-user unit. Every use there must be
+  # `systemctl --user`; anywhere else, or without --user, is a failure. A bare
+  # `command -v systemctl` presence check in that file is not an execution.
   priv=$(grep -nE '^[^#]*\b(sudo|pkexec|systemctl)\b' bin/*.sh lib/*.sh 2>/dev/null \
-         | grep -v 'apt install' || true)
+         | grep -v 'apt install' \
+         | grep -vE '^bin/gtk-follow\.sh:[0-9]+:.*(systemctl --user|command -v systemctl)' || true)
   if [[ -z "$priv" ]]; then
-    pass "nothing executes sudo, pkexec or systemctl, as SECURITY.md claims"
+    pass "nothing executes sudo or pkexec; systemctl appears only as 'systemctl --user' in bin/gtk-follow.sh"
   else
-    fail "SECURITY.md claims nothing runs sudo/pkexec/systemctl, but these do:"
+    fail "SECURITY.md allows only 'systemctl --user' in bin/gtk-follow.sh, and no sudo/pkexec, but these differ:"
     printf '%s\n' "$priv" | sed 's/^/        /'
   fi
   # The repository has exactly one root-level component, plymouth/. Everything else

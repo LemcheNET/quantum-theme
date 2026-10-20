@@ -7,13 +7,26 @@ second one is optional and nothing in the first depends on it.
 
 ### The desktop themes — `bin/`, `lib/`, `variants/`
 
-SVG artwork, config files, a prebuilt GTK theme, and ten shell scripts that copy them
+SVG artwork, config files, a prebuilt GTK theme, and eleven shell scripts that copy them
 into place and set appearance keys.
 
-- **No privileged code.** Nothing here runs as root or calls `sudo`, `pkexec` or
-  `systemctl`. The only mentions of `sudo` are in messages telling *you* to install a
-  distribution package. Nothing is setuid, and no systemd unit is installed.
-- **No daemon and no listener.** Nothing runs in the background, nothing binds a port.
+- **No privileged code.** Nothing here runs as root or calls `sudo` or `pkexec`. The only
+  mentions of `sudo` are in messages telling *you* to install a distribution package.
+  Nothing is setuid.
+- **One use of `systemctl`, per-user and on request.** `bin/gtk-follow.sh
+  --install-service` and `--uninstall-service` run `systemctl --user` to enable or remove
+  the unit below. Every call carries `--user`, so they act on your own session manager and
+  never on the system's, and no other script touches `systemctl`. `tests/run-tests.sh`
+  fails if `systemctl` appears anywhere else in `bin/` or `lib/`, or without `--user`.
+- **No daemon and no listener, unless you opt in.** Nothing runs in the background and
+  nothing binds a port, until you run `bin/gtk-follow.sh --install-service`. That installs
+  `~/.config/systemd/user/quantum-gtk-follow.service`, generated from the template in
+  `systemd/`, which runs `bin/gtk-follow.sh --watch` so GTK3 apps follow Plasma's
+  light/dark switch. It runs as you, reads the `color-scheme` gsettings key, writes the
+  `gtk-theme` key and the theme-name entries in files `gtk.sh` already created, and opens
+  no socket. `--uninstall-service` removes it. The unit's `ExecStart` points into this
+  checkout, so whatever is in `bin/gtk-follow.sh` is what runs at every login: treat that
+  file as you would a shell profile.
 - **Per-user scope.** Everything is written under `$XDG_DATA_HOME`, `$XDG_CONFIG_HOME`,
   `$XDG_CACHE_HOME` and `$XDG_STATE_HOME` (by default `~/.local/share`, `~/.config`,
   `~/.cache`, `~/.local/state`). No system path is touched.
