@@ -54,7 +54,7 @@ say "pre-release checks"
 ./tests/run-tests.sh || die "tests failed - not building a release"
 
 command -v git >/dev/null && [[ -d .git ]] && {
-  [[ -z "$(git status --porcelain)" ]] || say "note: working tree is dirty; the source tarball is built from disk, not from HEAD"
+  [[ -z "$(git status --porcelain)" ]] || say "note: working tree is dirty; both source and package artifacts are built from disk"
 }
 
 # ---- build -------------------------------------------------------------------
@@ -84,11 +84,7 @@ done
 
 # the whole repo: the install path the README documents
 src_out="$DIST/quantum-theme-$VER.tar.gz"
-if [[ -d .git ]] && command -v git >/dev/null; then
-  git archive --format=tar.gz --prefix="quantum-theme-$VER/" -o "$src_out" HEAD
-else
-  tar czf "$src_out" "${TARFLAGS[@]}" --exclude='./dist' --transform "s|^\.|quantum-theme-$VER|" .
-fi
+tar czf "$src_out" "${TARFLAGS[@]}" --exclude='./dist' --transform "s|^\.|quantum-theme-$VER|" .
 say "$(basename "$src_out") ($(du -h "$src_out" | cut -f1))"
 
 ( cd "$DIST" && sha256sum ./*.tar.gz > SHA256SUMS )

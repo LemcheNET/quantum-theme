@@ -49,8 +49,8 @@ unexercised: `retint.sh`, `opacity.sh`, `buttons.sh`, `whichbg.sh`, `icons.sh`, 
 | portal preference | `prefer-light` | `prefer-dark` |
 
 Shared by both, and defined once in `theme.env`: Breeze application style, no desktop
-layout, buttons on the right (`ButtonsOnLeft=M`, `ButtonsOnRight=IAX`), the Aurorae
-plugin id, and the `kwinrc` group name. Panel at 65% and popups at 75%.
+layout, button positions (`BUTTONS_LEFT=M`, `BUTTONS_RIGHT=IAX`), the Aurorae plugin id,
+and the `kwinrc` group name. Panel at 65% and popups at 75%.
 
 **The application style is checked, not just reported.** `contents/defaults` sets
 `widgetStyle`, so a different live value means either `plasma-apply-lookandfeel` did not
@@ -162,7 +162,9 @@ than two unrelated icon packs.
 
 `install.sh` refuses to `--apply` if the icon theme is missing, rather than applying a
 global theme that points at icons you do not have. `--force-icons` overrides.
-`uninstall.sh` restores your previous icon theme but leaves Slot on disk.
+Default `uninstall.sh` switches the appearance settings to stock Breeze and leaves the
+Slot files on disk. Use `--restore-backup` to replay the previously recorded icon-theme
+setting.
 
 ## Cursors
 
@@ -749,8 +751,8 @@ build.
   12px buttons — upstream Moe's geometry. Raise `TitleHeight` and
   `ButtonWidth`/`ButtonHeight` in `<ID>rc`, or use `bin/buttons.sh --base`.
 - **No menu-button artwork.** Moe ships no `menu.svg`, so the `M` button falls back to
-  the window icon. If that looks wrong, set `ButtonsOnLeft=` (empty) in
-  `packaging/stamp-metadata.py` and re-stamp.
+  the window icon. If that looks wrong, set `BUTTONS_LEFT=""` in `theme.env`, then run
+  `python3 packaging/stamp-metadata.py` to regenerate the defaults before installing.
 - **Content Credentials get injected on copy.** Copying files to this host through a file
   bridge signs every *image* with a C2PA provenance manifest — about 7.7 KiB of base64
   inside `<metadata>` in each SVG. Harmless to rendering (QSvg ignores `<metadata>`) but

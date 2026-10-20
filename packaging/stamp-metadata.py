@@ -108,7 +108,8 @@ def read_env(path):
         if not line or line.startswith("#") or "=" not in line:
             continue
         k, v = line.split("=", 1)
-        out[k.strip()] = shlex.split(v)[0] if v else ""
+        values = shlex.split(v)
+        out[k.strip()] = values[0] if values else ""
     return out
 
 
