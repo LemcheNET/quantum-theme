@@ -86,7 +86,7 @@ quantum_vdir()        { printf '%s\n' "$QUANTUM_ROOT/variants/$1"; }
 quantum_src_aurorae() { printf '%s\n' "$QUANTUM_ROOT/variants/$1/aurorae/$(quantum_variant_get "$1" ID)"; }
 
 QUANTUM_REQUIRED_KEYS=(SLUG ID NAME BASE_SCHEME ICON_THEME ICON_SUBDIR CURSOR_THEME PORTAL_PREF GTK_PREFER_DARK STOCK_LNF
-                       WIDGET_STYLE BUTTONS_LEFT BUTTONS_RIGHT AURORAE_PLUGIN KDECORATION_GROUP)
+                       WIDGET_STYLE BUTTONS_RIGHT AURORAE_PLUGIN KDECORATION_GROUP)
 
 quantum_init() {
   QUANTUM_ARGS=()
@@ -128,6 +128,7 @@ quantum_init() {
   for k in "${QUANTUM_REQUIRED_KEYS[@]}"; do
     [[ -n "${!k:-}" ]] || die "variants/$want/variant.env does not define $k"
   done
+  [[ ${BUTTONS_LEFT+x} ]] || die "theme.env does not define BUTTONS_LEFT"
   [[ "$SLUG" == "$want" ]] || die "variants/$want/variant.env says SLUG=$SLUG"
 
   # ---- derived, so no script computes these twice --------------------------

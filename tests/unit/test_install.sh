@@ -119,4 +119,17 @@ out="$(run install.sh --variant light --aply)"
 assert_eq "a typo'd flag exits non-zero" 1 "$(status)"
 assert_contains "and is named" "$out" "--aply"
 
+describe "an empty left-button position is valid"
+sandbox_reset
+seed_icon_theme Slot-Light-Icons
+sed -i 's/^BUTTONS_LEFT=.*/BUTTONS_LEFT=""/' "$QUANTUM_ROOT/theme.env"
+python3 "$QUANTUM_ROOT/packaging/stamp-metadata.py" >/dev/null
+assert_contains "generated defaults preserve the empty value" \
+  "$(cat "$QUANTUM_ROOT/variants/light/look-and-feel/QuantumLight/contents/defaults")" \
+  "ButtonsOnLeft="
+out="$(run install.sh --variant light --apply)"
+assert_eq "the install accepts the empty setting" 0 "$(status)"
+assert_eq "and the live KWin setting is empty" "" \
+  "$(kcfg kwinrc org.kde.kdecoration2 ButtonsOnLeft)"
+
 finish
